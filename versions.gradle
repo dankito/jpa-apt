@@ -1,0 +1,9 @@
+ext {
+
+    kotlinVersion = '1.1.2-5'
+
+    slf4jVersion = '1.7.25'
+
+    junitVersion = '4.12'
+
+}

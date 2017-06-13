@@ -1,0 +1,18 @@
+group 'net.dankito'
+version '1.0-SNAPSHOT'
+
+apply plugin: 'java'
+apply plugin: 'kotlin'
+
+sourceCompatibility = 1.7
+
+
+dependencies {
+    compile "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
+
+    compile "org.hibernate.javax.persistence:hibernate-jpa-2.1-api:1.0.0.Final"
+
+    compile "org.slf4j:slf4j-api:$slf4jVersion"
+
+    testCompile "junit:junit:$junitVersion"
+}

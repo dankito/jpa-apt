@@ -1,0 +1,5 @@
+rootProject.name = 'jpa-apt'
+
+include 'JPAAnnotationProcessor'
+//findProject(':JPAAnnotationProcessor')?.name = 'jpa-apt'
+
