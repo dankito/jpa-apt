@@ -25,6 +25,7 @@ class JPAAnnotationProcessor : AbstractProcessor() {
 
         roundEnv?.let { roundEnv ->
             if (roundEnv.processingOver() || annotations?.isEmpty() ?: true) {
+                processingEnv.messager.printMessage(Diagnostic.Kind.NOTE, "roundEnv.processingOver() = ${roundEnv.processingOver()}, annotations?.isEmpty() = ${annotations?.isEmpty()}")
                 return ALLOW_OTHER_PROCESSORS_TO_CLAIM_ANNOTATIONS
             }
 
@@ -33,17 +34,25 @@ class JPAAnnotationProcessor : AbstractProcessor() {
                 return ALLOW_OTHER_PROCESSORS_TO_CLAIM_ANNOTATIONS
             }
 
-            val context = AnnotationProcessingContext(roundEnv, processingEnv)
-
-            EntityConfigurationReader().readEntityConfigurations(context)
-            ColumnConfigurationReader().readEntityColumns(context)
-
-            val entityConfiguration = createResult(context)
-
-            JsonEntityConfigurationProcessor().processConfiguration(entityConfiguration, processingEnv)
+            try {
+                processAnnotations(roundEnv)
+            } catch(e: Exception) {
+                processingEnv.messager.printMessage(Diagnostic.Kind.ERROR, "Could not process JPA annotations: $e")
+            }
         }
 
         return ALLOW_OTHER_PROCESSORS_TO_CLAIM_ANNOTATIONS
+    }
+
+    private fun processAnnotations(roundEnv: RoundEnvironment) {
+        val context = AnnotationProcessingContext(roundEnv, processingEnv)
+
+        EntityConfigurationReader().readEntityConfigurations(context)
+        ColumnConfigurationReader().readEntityColumns(context)
+
+        val entityConfiguration = createResult(context)
+
+        JsonEntityConfigurationProcessor().processConfiguration(entityConfiguration, processingEnv)
     }
 
 
