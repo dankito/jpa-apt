@@ -5,12 +5,14 @@ import net.dankito.jpa.apt.config.EntityConfig
 import net.dankito.jpa.apt.config.EntityTypeInfo
 import net.dankito.jpa.apt.config.Property
 import java.lang.reflect.Field
+import javax.annotation.processing.ProcessingEnvironment
 import javax.annotation.processing.RoundEnvironment
 import javax.lang.model.element.*
 import javax.persistence.*
+import javax.tools.Diagnostic
 
 
-class AnnotationProcessingContext(val roundEnv: RoundEnvironment) {
+class AnnotationProcessingContext(val roundEnv: RoundEnvironment, val processingEnv: ProcessingEnvironment) {
 
     val entityClasses: Set<out Element> = getElementsFor(Entity::class.java)
 
@@ -51,17 +53,23 @@ class AnnotationProcessingContext(val roundEnv: RoundEnvironment) {
 
     private fun categorizeElements() {
         roundEnv.rootElements.filter { it is TypeElement && hasEntityOrMappedSuperclassAnnotation(it) }.forEach { element ->
-            val typeElement = element as TypeElement
-
-            val entityClass = Class.forName(typeElement.qualifiedName.toString())
-            val info = EntityTypeInfo(entityClass, typeElement)
-
-            typeElement.annotationMirrors.forEach { info.classAnnotations.put(it.annotationType, it.elementValues) }
-            typeElement.enclosedElements.filter { it.kind == ElementKind.FIELD }.forEach { info.properties.put(it.simpleName.toString(), it as VariableElement) }
-            typeElement.enclosedElements.filter { it.kind == ElementKind.METHOD }.forEach { info.methods.put(it.simpleName.toString(), it as ExecutableElement) }
-
-            entityTypes.put(entityClass, info)
+            try {
+                createEntityTypeInfoForElement(element)
+            } catch(e: Exception) { processingEnv.messager.printMessage(Diagnostic.Kind.ERROR, "Could not create EntityTypeInfo for element $element: $e", element) }
         }
+    }
+
+    private fun createEntityTypeInfoForElement(element: Element) {
+        val typeElement = element as TypeElement
+
+        val entityClass = Class.forName(typeElement.qualifiedName.toString())
+        val info = EntityTypeInfo(entityClass, typeElement)
+
+        typeElement.annotationMirrors.forEach { info.classAnnotations.put(it.annotationType, it.elementValues) }
+        typeElement.enclosedElements.filter { it.kind == ElementKind.FIELD }.forEach { info.properties.put(it.simpleName.toString(), it as VariableElement) }
+        typeElement.enclosedElements.filter { it.kind == ElementKind.METHOD }.forEach { info.methods.put(it.simpleName.toString(), it as ExecutableElement) }
+
+        entityTypes.put(entityClass, info)
     }
 
     private fun hasEntityOrMappedSuperclassAnnotation(element: TypeElement): Boolean {
