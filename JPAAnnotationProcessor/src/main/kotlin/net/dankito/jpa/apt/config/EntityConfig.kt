@@ -38,7 +38,7 @@ class EntityConfig<CLASS>() {
     var schemaName: String? = null
     @Transient // TODO: make serializable
     var uniqueConstraints: Array<UniqueConstraint> = arrayOf()
-//    var indexes: Array<Index> = arrayOf() // JPA 2.1
+//    var indexes: Array<Index> = arrayOf() // TODO: JPA 2.1
 
     // inheritance
     var classHierarchy: List<Class<*>> = mutableListOf()

@@ -81,7 +81,7 @@ class EntityConfigurationReader {
             entityConfig.schemaName = tableAnnotation.schema
             
             entityConfig.uniqueConstraints = tableAnnotation.uniqueConstraints
-//            entityConfig.indexes = tableAnnotation.indexes // JPA 2.1
+//            entityConfig.indexes = tableAnnotation.indexes // TODO: JPA 2.1
         }
     }
 

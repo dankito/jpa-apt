@@ -245,6 +245,8 @@ class RelationColumnConfigurationReader {
 
             column.tableName = joinColumn.table
             column.referencedColumnName = joinColumn.referencedColumnName
+
+//            joinColumn.foreignKey // TODO: JPA 2.1
         }
 
         if(joinColumnAnnotationOrNameNotSet) {
