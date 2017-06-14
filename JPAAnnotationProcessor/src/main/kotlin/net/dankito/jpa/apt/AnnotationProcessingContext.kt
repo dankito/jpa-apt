@@ -90,6 +90,10 @@ class AnnotationProcessingContext(val roundEnv: RoundEnvironment) {
         entityConfigRegistry.put(entityConfig.entityClass, entityConfig)
     }
 
+    fun getEntityConfigForClass(entityClass: Class<*>) : EntityConfig<*>? {
+        return entityConfigRegistry[entityClass]
+    }
+
     fun getEntityConfigs() : List<EntityConfig<*>> {
         return entityConfigRegistry.values.toList()
     }
