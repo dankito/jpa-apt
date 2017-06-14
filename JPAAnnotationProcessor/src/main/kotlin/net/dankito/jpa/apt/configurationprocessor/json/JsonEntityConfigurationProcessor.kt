@@ -5,11 +5,9 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.module.SimpleModule
 import net.dankito.jpa.apt.config.JpaEntityConfiguration
 import net.dankito.jpa.apt.configurationprocessor.IEntityConfigurationProcessor
-import net.dankito.jpa.apt.configurationprocessor.json.serializer.FieldDeserializer
-import net.dankito.jpa.apt.configurationprocessor.json.serializer.FieldSerializer
-import net.dankito.jpa.apt.configurationprocessor.json.serializer.MethodDeserializer
-import net.dankito.jpa.apt.configurationprocessor.json.serializer.MethodSerializer
+import net.dankito.jpa.apt.configurationprocessor.json.serializer.*
 import org.slf4j.LoggerFactory
+import java.lang.reflect.Constructor
 import java.lang.reflect.Field
 import java.lang.reflect.Method
 
@@ -33,6 +31,9 @@ class JsonEntityConfigurationProcessor : IEntityConfigurationProcessor {
 
         module.addSerializer(Method::class.java, MethodSerializer())
         module.addDeserializer(Method::class.java, MethodDeserializer())
+
+        module.addSerializer(Constructor::class.java, ConstructorSerializer())
+        module.addDeserializer(Constructor::class.java, ConstructorDeserializer())
 
         objectMapper.registerModule(module)
 
