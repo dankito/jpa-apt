@@ -15,12 +15,12 @@ class EntityConfig<CLASS>(val entityClass: Class<CLASS>) {
     lateinit var tableName: String
 
     lateinit var constructor: Constructor<CLASS>
-    var access: AccessType = AccessType.FIELD
+    var access: AccessType? = null
 
-    lateinit var idProperty: ColumnConfig
-    lateinit var versionProperty: ColumnConfig
+    lateinit var idColumn: ColumnConfig
+    lateinit var versionColumn: ColumnConfig
     
-    var columnConfigs: List<ColumnConfig> = ArrayList()
+    var columns = ArrayList<ColumnConfig>()
         private set
     
 
@@ -129,6 +129,11 @@ class EntityConfig<CLASS>(val entityClass: Class<CLASS>) {
     }
 
 
+    fun addColumn(column: ColumnConfig) {
+        columns.add(column)
+    }
+
+
     override fun toString(): String {
         if(tableName != null) {
             return tableName
@@ -137,5 +142,5 @@ class EntityConfig<CLASS>(val entityClass: Class<CLASS>) {
             return entityClass.simpleName
         }
     }
-    
+
 }
