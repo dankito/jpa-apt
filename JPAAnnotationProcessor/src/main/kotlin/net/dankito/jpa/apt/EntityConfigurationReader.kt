@@ -24,7 +24,7 @@ class EntityConfigurationReader {
         val asType = entityClassElement as TypeElement
         val entityClass = Class.forName(asType.qualifiedName.toString())
 
-        var entityConfig = createEntityConfig(entityClass, currentInheritanceTypeSubEntities)
+        val entityConfig = createEntityConfig(entityClass, currentInheritanceTypeSubEntities)
 
         context.registerEntityConfig(entityConfig)
 
@@ -81,7 +81,7 @@ class EntityConfigurationReader {
             entityConfig.schemaName = tableAnnotation.schema
             
             entityConfig.uniqueConstraints = tableAnnotation.uniqueConstraints
-            entityConfig.indexes = tableAnnotation.indexes
+//            entityConfig.indexes = tableAnnotation.indexes // JPA 2.1
         }
     }
 
