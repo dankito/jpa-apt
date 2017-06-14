@@ -1,18 +1,26 @@
 package net.dankito.jpa.apt.config
 
+import com.fasterxml.jackson.annotation.JsonIdentityInfo
+import com.fasterxml.jackson.annotation.ObjectIdGenerators
 import javax.persistence.CascadeType
 import javax.persistence.FetchType
 import javax.persistence.GenerationType
 
 
+@JsonIdentityInfo(
+        generator = ObjectIdGenerators.UUIDGenerator::class)
 class ColumnConfig(val entityConfig: EntityConfig<*>, val property: Property) {
 
-    var type: Class<*> = property.field.type
+    private constructor() : this(EntityConfig(Any::class.java), Property()) // for Jackson
+
+
+    var type: Class<*> = property.getType()
     var dataType: DataType? = null
 
     var columnName = property.field.name // default value, may be overwritten by @Column (or other) annotation
     var tableName: String? = null
 
+    // Id configuration
     var isId: Boolean = false
     var isGeneratedId: Boolean = false
     var generatedIdType = GenerationType.AUTO
@@ -23,6 +31,7 @@ class ColumnConfig(val entityConfig: EntityConfig<*>, val property: Property) {
 
     var isLob = false
 
+    // column configuration
     var columnDefinition: String? = null
     var length = 255
     var scale = 0
