@@ -11,7 +11,8 @@ import javax.lang.model.element.ElementKind
 import javax.persistence.*
 
 
-class ColumnConfigurationReader(var reflectionHelper: ReflectionHelper = ReflectionHelper()) {
+class ColumnConfigurationReader(private var relationColumnConfigurationReader: RelationColumnConfigurationReader = RelationColumnConfigurationReader(),
+                                private var reflectionHelper: ReflectionHelper = ReflectionHelper()) {
 
     fun readEntityColumns(context: AnnotationProcessingContext) {
         for(entityConfig in context.getEntityConfigs()) {
@@ -47,19 +48,19 @@ class ColumnConfigurationReader(var reflectionHelper: ReflectionHelper = Reflect
         context.registerColumn(column)
 
         context.getAnnotationsForProperty(entityConfig.entityClass, property.field.name)?.let { variableElement ->
-            readColumnConfiguration(column, variableElement)
+            readColumnConfiguration(column, variableElement, context)
         }
 
         if(property.getter != null) {
             context.getAnnotationsForMethod(entityConfig.entityClass, property.getter.name)?.let { executableElement ->
-                readColumnConfiguration(column, executableElement)
+                readColumnConfiguration(column, executableElement, context)
             }
         }
 
         return column
     }
 
-    private fun readColumnConfiguration(column: ColumnConfig, element: Element) {
+    private fun readColumnConfiguration(column: ColumnConfig, element: Element, context: AnnotationProcessingContext) {
         readIdConfiguration(column, element)
         readVersionConfiguration(column, element)
 
@@ -67,7 +68,7 @@ class ColumnConfigurationReader(var reflectionHelper: ReflectionHelper = Reflect
         readBasicAnnotation(column, element)
         readColumnAnnotation(column, element)
 
-        readRelationConfiguration(column, element)
+        readRelationConfiguration(column, element, context)
     }
 
     private fun readIdConfiguration(column: ColumnConfig, element: Element) {
@@ -185,8 +186,8 @@ class ColumnConfigurationReader(var reflectionHelper: ReflectionHelper = Reflect
         }
     }
 
-    private fun readRelationConfiguration(column: ColumnConfig, element: Element) {
-
+    private fun readRelationConfiguration(column: ColumnConfig, element: Element, context: AnnotationProcessingContext) {
+        relationColumnConfigurationReader.readRelationConfiguration(column, element, context)
     }
 
 }
