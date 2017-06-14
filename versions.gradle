@@ -4,6 +4,8 @@ ext {
 
     slf4jVersion = '1.7.25'
 
+    jacksonVersion = '2.8.7'
+
     junitVersion = '4.12'
 
 }
