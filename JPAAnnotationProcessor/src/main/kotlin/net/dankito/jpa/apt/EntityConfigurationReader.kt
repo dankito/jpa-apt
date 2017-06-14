@@ -1,6 +1,7 @@
 package net.dankito.jpa.apt
 
 import net.dankito.jpa.apt.config.EntityConfig
+import net.dankito.jpa.apt.reflection.ReflectionHelper
 import java.lang.reflect.Method
 import java.sql.SQLException
 import javax.lang.model.element.Element
@@ -10,7 +11,7 @@ import javax.persistence.*
 
 
 
-class EntityConfigurationReader {
+class EntityConfigurationReader(private val reflectionHelper: ReflectionHelper = ReflectionHelper()) {
 
     fun readEntityConfigurations(context: AnnotationProcessingContext) {
         for(entityClassElement in context.entityClasses) {
@@ -40,11 +41,12 @@ class EntityConfigurationReader {
         val inheritanceStrategy = getInheritanceStrategyIfEntityIsInheritanceStartEntity(entityClass)
 
         if (inheritanceStrategy == null) {
-            entityConfig = EntityConfig(entityClass)
+            val constructor = reflectionHelper.findNoArgConstructor(entityClass)
+            entityConfig = EntityConfig(entityClass, constructor)
         }
         else {
 //            entityConfig = createInheritanceEntityConfig(entityClass, inheritanceStrategy, currentInheritanceTypeSubEntities)
-            entityConfig = EntityConfig(entityClass)
+            entityConfig = EntityConfig(entityClass, reflectionHelper.findNoArgConstructor(entityClass))
         }
 
         entityConfig.tableName = entityConfig.entityClass.simpleName // default value, may overwritten by configuration in @Table or @Entity annotation

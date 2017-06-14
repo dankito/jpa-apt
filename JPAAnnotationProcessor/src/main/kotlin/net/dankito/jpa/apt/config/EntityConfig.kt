@@ -13,15 +13,14 @@ import kotlin.collections.ArrayList
 @JsonIdentityInfo(
         generator = ObjectIdGenerators.PropertyGenerator::class,
         property = "entityClass")
-class EntityConfig(val entityClass: Class<*>) {
+class EntityConfig(val entityClass: Class<*>, val constructor: Constructor<*>) {
 
-    internal constructor() : this(Any::class.java) { // for Jackson
+    internal constructor() : this(Any::class.java, Any::class.java.declaredConstructors[0]) { // for Jackson
 
     }
 
     lateinit var tableName: String
 
-    lateinit var constructor: Constructor<*>
     var access: AccessType? = null
 
     lateinit var idColumn: ColumnConfig
