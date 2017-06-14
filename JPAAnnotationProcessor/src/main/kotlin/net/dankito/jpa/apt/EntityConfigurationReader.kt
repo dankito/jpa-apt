@@ -1,11 +1,11 @@
 package net.dankito.jpa.apt
 
 import net.dankito.jpa.apt.config.EntityConfig
+import net.dankito.jpa.apt.config.EntityTypeInfo
 import net.dankito.jpa.apt.reflection.ReflectionHelper
 import java.lang.reflect.Method
 import java.sql.SQLException
 import javax.lang.model.element.Element
-import javax.lang.model.element.TypeElement
 import javax.persistence.*
 
 
@@ -14,22 +14,31 @@ import javax.persistence.*
 class EntityConfigurationReader(private val reflectionHelper: ReflectionHelper = ReflectionHelper()) {
 
     fun readEntityConfigurations(context: AnnotationProcessingContext) {
-        for(entityClassElement in context.entityClasses) {
-            readEntityConfig(context, entityClassElement, listOf())
+        for(topLevelEntityInfo in context.getTopLevelEntities()) {
+            readEntityConfigsDownTheTypeHierarchy(context, topLevelEntityInfo, listOf())
+        }
+    }
+
+    private fun readEntityConfigsDownTheTypeHierarchy(context: AnnotationProcessingContext, entityTypeInfo: EntityTypeInfo, currentInheritanceTypeSubEntities: List<EntityConfig>) {
+        readEntityConfig(context, entityTypeInfo, currentInheritanceTypeSubEntities)
+
+        entityTypeInfo.childClasses.forEach {
+            readEntityConfigsDownTheTypeHierarchy(context, it, currentInheritanceTypeSubEntities)
         }
     }
 
 
     @Throws(SQLException::class)
-    private fun readEntityConfig(context: AnnotationProcessingContext, entityClassElement: Element, currentInheritanceTypeSubEntities: List<EntityConfig>): EntityConfig {
-        val asType = entityClassElement as TypeElement
-        val entityClass = Class.forName(asType.qualifiedName.toString())
-
-        val entityConfig = createEntityConfig(entityClass, currentInheritanceTypeSubEntities)
+    private fun readEntityConfig(context: AnnotationProcessingContext, entityTypeInfo: EntityTypeInfo, currentInheritanceTypeSubEntities: List<EntityConfig>): EntityConfig {
+        val entityConfig = createEntityConfig(entityTypeInfo.entityClass, currentInheritanceTypeSubEntities)
 
         context.registerEntityConfig(entityConfig)
 
-        readEntityAnnotations(entityConfig, entityClassElement)
+        entityTypeInfo.superClassInfo?.let { context.getEntityConfigForClass(it.entityClass)?.let { superClassEntityConfig ->
+            superClassEntityConfig.addChildEntityConfig(entityConfig)
+        } }
+
+        readEntityAnnotations(entityConfig, entityTypeInfo.entityElement)
         findLifeCycleEvents(entityConfig)
 
         return entityConfig
@@ -50,8 +59,6 @@ class EntityConfigurationReader(private val reflectionHelper: ReflectionHelper =
         }
 
         entityConfig.tableName = entityConfig.entityClass.simpleName // default value, may overwritten by configuration in @Table or @Entity annotation
-
-        entityConfig.classHierarchy = getClassHierarchy(entityClass)
 
         return entityConfig
     }
@@ -125,7 +132,7 @@ class EntityConfigurationReader(private val reflectionHelper: ReflectionHelper =
     }
 
 
-    private fun <CLASS> getInheritanceStrategyIfEntityIsInheritanceStartEntity(entityClass: Class<CLASS>): InheritanceType? {
+    private fun getInheritanceStrategyIfEntityIsInheritanceStartEntity(entityClass: Class<*>): InheritanceType? {
 
         return null
     }
