@@ -6,6 +6,9 @@ import java.lang.reflect.Method
 
 data class Property(val field: Field, val getter: Method?, val setter: Method?) {
 
+    internal constructor() : this(Property::class.java.getDeclaredField("field"), null, null) // for Jackson
+
+
     fun getType(): Class<*> {
         if (field != null) {
             return field.type
