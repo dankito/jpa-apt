@@ -7,7 +7,6 @@ import java.lang.reflect.Method
 import java.util.*
 import javax.persistence.AccessType
 import javax.persistence.InheritanceType
-import javax.persistence.UniqueConstraint
 import kotlin.collections.ArrayList
 
 @JsonIdentityInfo(
@@ -28,6 +27,10 @@ class EntityConfig(val entityClass: Class<*>, val constructor: Constructor<*>) {
     
     var columns = ArrayList<ColumnConfig>()
         private set
+
+    var parentEntity: EntityConfig? = null
+        private set
+    val childEntities = ArrayList<EntityConfig>()
     
 
     // @Table Annotation settings
@@ -137,6 +140,53 @@ class EntityConfig(val entityClass: Class<*>, val constructor: Constructor<*>) {
 
     fun addColumn(column: ColumnConfig) {
         columns.add(column)
+    }
+
+    fun addChildEntityConfig(entityConfig: EntityConfig) {
+        childEntities.add(entityConfig)
+
+        entityConfig.parentEntity = this
+    }
+
+
+    fun setIdColumnAndSetItOnChildEntities(idColumn: ColumnConfig) {
+        this.idColumn = idColumn
+
+        setIdColumnOnChildEntitiesRecursively(idColumn)
+    }
+
+    private fun setIdColumnOnChildEntitiesRecursively(idColumn: ColumnConfig) {
+        for(childEntity in childEntities) {
+            setIdColumnOnChildEntitiesRecursively(childEntity, idColumn)
+        }
+    }
+
+    private fun setIdColumnOnChildEntitiesRecursively(childEntity: EntityConfig, idColumn: ColumnConfig) {
+        childEntity.idColumn = idColumn
+
+        for(subChild in childEntity.childEntities) {
+            setIdColumnOnChildEntitiesRecursively(subChild, idColumn)
+        }
+    }
+
+    fun setVersionColumnAndSetItOnChildEntities(versionColumn: ColumnConfig) {
+        this.versionColumn = versionColumn
+
+        setVersionColumnOnChildEntitiesRecursively(versionColumn)
+    }
+
+    private fun setVersionColumnOnChildEntitiesRecursively(versionColumn: ColumnConfig) {
+        for(childEntity in childEntities) {
+            setVersionColumnOnChildEntitiesRecursively(childEntity, versionColumn)
+        }
+    }
+
+    private fun setVersionColumnOnChildEntitiesRecursively(childEntity: EntityConfig, versionColumn: ColumnConfig) {
+        childEntity.versionColumn = versionColumn
+
+        for(subChild in childEntity.childEntities) {
+            setVersionColumnOnChildEntitiesRecursively(subChild, versionColumn)
+        }
     }
 
 

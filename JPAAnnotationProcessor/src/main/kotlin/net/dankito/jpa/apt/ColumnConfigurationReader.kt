@@ -76,7 +76,7 @@ class ColumnConfigurationReader(private var relationColumnConfigurationReader: R
             val entityConfig = column.entityConfig
 
             column.isId = true
-            entityConfig.idColumn = column
+            entityConfig.setIdColumnAndSetItOnChildEntities(column)
 
             setAccess(entityConfig, element)
 
@@ -125,7 +125,7 @@ class ColumnConfigurationReader(private var relationColumnConfigurationReader: R
             }
 
             column.isVersion = true
-            column.entityConfig.versionColumn = column
+            column.entityConfig.setVersionColumnAndSetItOnChildEntities(column)
         }
     }
 
