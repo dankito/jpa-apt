@@ -47,6 +47,7 @@ class AnnotationProcessingContext(val roundEnv: RoundEnvironment, val processing
 
     init {
         categorizeElements()
+        orderEntitiesByClassHierarchy()
     }
 
     private fun getElementsFor(annotationClass: Class<out Annotation>) = roundEnv.getElementsAnnotatedWith(annotationClass)
@@ -76,6 +77,21 @@ class AnnotationProcessingContext(val roundEnv: RoundEnvironment, val processing
         return element.getAnnotation(Entity::class.java) != null || element.getAnnotation(MappedSuperclass::class.java) != null
     }
 
+
+    private fun orderEntitiesByClassHierarchy() {
+        entityTypes.values.forEach { info ->
+            val superClass = info.entityClass.superclass
+            entityTypes[superClass]?.let { superClassEntityTypeInfo ->
+                info.superClassInfo = superClassEntityTypeInfo
+                superClassEntityTypeInfo.childClasses.add(info)
+            }
+        }
+    }
+
+
+    fun getTopLevelEntities(): List<EntityTypeInfo> {
+        return entityTypes.values.filter { it.superClassInfo == null }
+    }
 
     fun getAnnotationsForProperty(entityClass: Class<*>, propertyName: String): VariableElement? {
         entityTypes[entityClass]?.let {
