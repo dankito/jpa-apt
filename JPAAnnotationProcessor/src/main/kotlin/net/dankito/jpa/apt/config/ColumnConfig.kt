@@ -42,13 +42,37 @@ class ColumnConfig(val entityConfig: EntityConfig<*>, val property: Property) {
     var insertable = true
     var updatable = true
     var fetch = FetchType.EAGER
-    var cascade = arrayOfNulls<CascadeType>(0)
 
+    // Relation configuration
+    var relationType: RelationType = RelationType.None
+
+    var targetEntity: EntityConfig<*>? = null
+    var targetColumn: ColumnConfig? = null
+
+    var orphanRemoval = false
+    var referencedColumnName: String? = null
+
+    var isJoinColumn = false
+
+    var cascade = arrayOfNulls<CascadeType>(0)
     var cascadePersist: Boolean? = null
     var cascadeRefresh: Boolean? = null
     var cascadeMerge: Boolean? = null
     var cascadeDetach: Boolean? = null
     var cascadeRemove: Boolean? = null
+
+
+    fun isRelationshipColumn(): Boolean {
+        return relationType != RelationType.None
+    }
+
+    fun isToManyColumn(): Boolean {
+        return relationType == RelationType.OneToMany || relationType == RelationType.ManyToMany
+    }
+
+    fun isManyToManyColumn(): Boolean {
+        return relationType == RelationType.ManyToMany
+    }
 
 
     override fun toString(): String {
