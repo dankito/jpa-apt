@@ -40,7 +40,7 @@ class JPAAnnotationProcessor : AbstractProcessor() {
 
             val entityConfiguration = createResult(context)
 
-            JsonEntityConfigurationProcessor().processConfiguration(entityConfiguration)
+            JsonEntityConfigurationProcessor().processConfiguration(entityConfiguration, processingEnv)
         }
 
         return ALLOW_OTHER_PROCESSORS_TO_CLAIM_ANNOTATIONS
