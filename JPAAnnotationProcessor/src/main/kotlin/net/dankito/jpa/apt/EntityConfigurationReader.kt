@@ -82,7 +82,7 @@ class EntityConfigurationReader(private val reflectionHelper: ReflectionHelper =
             entityConfig.catalogName = tableAnnotation.catalog
             entityConfig.schemaName = tableAnnotation.schema
             
-            entityConfig.uniqueConstraints = tableAnnotation.uniqueConstraints
+//            entityConfig.uniqueConstraints = tableAnnotation.uniqueConstraints // TODO
 //            entityConfig.indexes = tableAnnotation.indexes // TODO: JPA 2.1
         }
     }

@@ -33,8 +33,7 @@ class EntityConfig(val entityClass: Class<*>, val constructor: Constructor<*>) {
     // @Table Annotation settings
     var catalogName: String? = null
     var schemaName: String? = null
-    @Transient // TODO: make serializable
-    var uniqueConstraints: Array<UniqueConstraint> = arrayOf()
+//    var uniqueConstraints: Array<UniqueConstraint> = arrayOf() // TODO: make serializable
 //    var indexes: Array<Index> = arrayOf() // TODO: JPA 2.1
 
     // inheritance
