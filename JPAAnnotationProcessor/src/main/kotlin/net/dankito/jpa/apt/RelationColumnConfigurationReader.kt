@@ -273,7 +273,7 @@ class RelationColumnConfigurationReader {
 
 
     @Throws(SQLException::class)
-    private fun getTargetEntityConfig(column: ColumnConfig, annotationTargetEntityValue: Class<*>, context: AnnotationProcessingContext): EntityConfig<*> {
+    private fun getTargetEntityConfig(column: ColumnConfig, annotationTargetEntityValue: Class<*>, context: AnnotationProcessingContext): EntityConfig {
         var targetEntityClass = column.property.getType()
 
         if (annotationTargetEntityValue != Void::class) { // Void is the default value for targetEntity

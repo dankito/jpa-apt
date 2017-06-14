@@ -20,7 +20,7 @@ class ColumnConfigurationReader(private var relationColumnConfigurationReader: R
         }
     }
 
-    private fun readEntityColumns(entityConfig: EntityConfig<*>, context: AnnotationProcessingContext) {
+    private fun readEntityColumns(entityConfig: EntityConfig, context: AnnotationProcessingContext) {
         val fields = reflectionHelper.getNonStaticNonTransientFields(entityConfig.entityClass)
         val methodsMap = reflectionHelper.getNonStaticNonAbstractNonTransientMethodsMap(entityConfig.entityClass)
 
@@ -29,7 +29,7 @@ class ColumnConfigurationReader(private var relationColumnConfigurationReader: R
         readEntityColumns(properties, entityConfig, context)
     }
 
-    private fun readEntityColumns(properties: List<Property>, entityConfig: EntityConfig<*>, context: AnnotationProcessingContext) {
+    private fun readEntityColumns(properties: List<Property>, entityConfig: EntityConfig, context: AnnotationProcessingContext) {
         for(property in properties) {
             val cachedPropertyConfig = context.getColumnConfiguration(property)
 
@@ -43,7 +43,7 @@ class ColumnConfigurationReader(private var relationColumnConfigurationReader: R
         }
     }
 
-    private fun readColumnConfiguration(entityConfig: EntityConfig<*>, property: Property, context: AnnotationProcessingContext) : ColumnConfig {
+    private fun readColumnConfiguration(entityConfig: EntityConfig, property: Property, context: AnnotationProcessingContext) : ColumnConfig {
         val column = ColumnConfig(entityConfig, property)
         context.registerColumn(column)
 
@@ -87,7 +87,7 @@ class ColumnConfigurationReader(private var relationColumnConfigurationReader: R
         }
     }
 
-    private fun setAccess(entityConfig: EntityConfig<*>, element: Element) {
+    private fun setAccess(entityConfig: EntityConfig, element: Element) {
         if (entityConfig.access == null) { // if access != null than it has been set by @AccessAnnotation
             // otherwise access is determined where @Id Annotation is placed, on field or get method
             if (element.kind == ElementKind.METHOD) {

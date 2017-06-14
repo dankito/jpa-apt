@@ -13,17 +13,15 @@ import kotlin.collections.ArrayList
 @JsonIdentityInfo(
         generator = ObjectIdGenerators.PropertyGenerator::class,
         property = "entityClass")
-class EntityConfig<CLASS>() {
+class EntityConfig(val entityClass: Class<*>) {
 
-    constructor(entityClass: Class<CLASS>) : this() {
-        this.entityClass = entityClass
+    internal constructor() : this(Any::class.java) { // for Jackson
+
     }
-
-    lateinit var entityClass: Class<CLASS>
 
     lateinit var tableName: String
 
-    lateinit var constructor: Constructor<CLASS>
+    lateinit var constructor: Constructor<*>
     var access: AccessType? = null
 
     lateinit var idColumn: ColumnConfig
@@ -42,10 +40,10 @@ class EntityConfig<CLASS>() {
 
     // inheritance
     var classHierarchy: List<Class<*>> = mutableListOf()
-    protected var inheritanceTopLevelEntityConfig: EntityConfig<*>? = null
-    protected var parentEntityConfig: EntityConfig<*>? = null
-    protected var topDownInheritanceHierarchy: MutableList<EntityConfig<*>>? = null
-    protected var subClassEntityConfigs: MutableSet<EntityConfig<*>> = HashSet()
+    protected var inheritanceTopLevelEntityConfig: EntityConfig? = null
+    protected var parentEntityConfig: EntityConfig? = null
+    protected var topDownInheritanceHierarchy: MutableList<EntityConfig>? = null
+    protected var subClassEntityConfigs: MutableSet<EntityConfig> = HashSet()
     var inheritance: InheritanceType? = null
 
     // Life Cycle Events

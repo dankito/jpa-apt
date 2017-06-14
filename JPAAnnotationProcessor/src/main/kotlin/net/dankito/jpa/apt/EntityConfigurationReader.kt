@@ -20,7 +20,7 @@ class EntityConfigurationReader {
 
 
     @Throws(SQLException::class)
-    private fun readEntityConfig(context: AnnotationProcessingContext, entityClassElement: Element, currentInheritanceTypeSubEntities: List<EntityConfig<*>>): EntityConfig<*> {
+    private fun readEntityConfig(context: AnnotationProcessingContext, entityClassElement: Element, currentInheritanceTypeSubEntities: List<EntityConfig>): EntityConfig {
         val asType = entityClassElement as TypeElement
         val entityClass = Class.forName(asType.qualifiedName.toString())
 
@@ -35,16 +35,16 @@ class EntityConfigurationReader {
     }
 
     @Throws(SQLException::class)
-    private fun <CLASS> createEntityConfig(entityClass: Class<CLASS>, currentInheritanceTypeSubEntities: List<EntityConfig<*>>): EntityConfig<CLASS> {
-        var entityConfig: EntityConfig<CLASS>? = null
+    private fun createEntityConfig(entityClass: Class<*>, currentInheritanceTypeSubEntities: List<EntityConfig>): EntityConfig {
+        var entityConfig: EntityConfig? = null
         val inheritanceStrategy = getInheritanceStrategyIfEntityIsInheritanceStartEntity(entityClass)
 
         if (inheritanceStrategy == null) {
-            entityConfig = EntityConfig<CLASS>(entityClass)
+            entityConfig = EntityConfig(entityClass)
         }
         else {
 //            entityConfig = createInheritanceEntityConfig(entityClass, inheritanceStrategy, currentInheritanceTypeSubEntities)
-            entityConfig = EntityConfig<CLASS>(entityClass)
+            entityConfig = EntityConfig(entityClass)
         }
 
         entityConfig.tableName = entityConfig.entityClass.simpleName // default value, may overwritten by configuration in @Table or @Entity annotation
@@ -56,14 +56,14 @@ class EntityConfigurationReader {
 
 
     @Throws(SQLException::class)
-    private fun readEntityAnnotations(entityConfig: EntityConfig<*>, entityClassElement: Element) {
+    private fun readEntityAnnotations(entityConfig: EntityConfig, entityClassElement: Element) {
         readEntityAnnotation(entityConfig, entityClassElement)
         readTableAnnotation(entityConfig, entityClassElement)
         readAccessAnnotation(entityConfig, entityClassElement)
     }
 
     @Throws(SQLException::class)
-    private fun readEntityAnnotation(entityConfig: EntityConfig<*>, entityClassElement: Element) {
+    private fun readEntityAnnotation(entityConfig: EntityConfig, entityClassElement: Element) {
         entityClassElement.getAnnotation(Entity::class.java)?.let { entityAnnotation ->
             val name = entityAnnotation.name
             if(name.isNullOrBlank() == false) {
@@ -73,7 +73,7 @@ class EntityConfigurationReader {
     }
 
     @Throws(SQLException::class)
-    private fun readTableAnnotation(entityConfig: EntityConfig<*>, entityClassElement: Element) {
+    private fun readTableAnnotation(entityConfig: EntityConfig, entityClassElement: Element) {
         entityClassElement.getAnnotation(Table::class.java)?.let { tableAnnotation ->
             entityConfig.tableName = tableAnnotation.name
 
@@ -86,14 +86,14 @@ class EntityConfigurationReader {
     }
 
     @Throws(SQLException::class)
-    private fun readAccessAnnotation(entityConfig: EntityConfig<*>, entityClassElement: Element) {
+    private fun readAccessAnnotation(entityConfig: EntityConfig, entityClassElement: Element) {
         entityClassElement.getAnnotation(Access::class.java)?.let { accessAnnotation ->
             entityConfig.access = accessAnnotation.value
         }
     }
 
 
-    private fun findLifeCycleEvents(entityConfig: EntityConfig<*>) {
+    private fun findLifeCycleEvents(entityConfig: EntityConfig) {
         for(classWalk in entityConfig.classHierarchy) {
             for(method in classWalk.declaredMethods) {
                 checkMethodForLifeCycleEvents(method, entityConfig)
@@ -101,7 +101,7 @@ class EntityConfigurationReader {
         }
     }
 
-    private fun checkMethodForLifeCycleEvents(method: Method, entityConfig: EntityConfig<*>) {
+    private fun checkMethodForLifeCycleEvents(method: Method, entityConfig: EntityConfig) {
         //    List<Annotation> methodAnnotations = Arrays.asList(method.getAnnotations());
 
         // TODO: i don't know what the specifications says but i implemented it this way that superclass life cycle events don't overwrite that ones from child classes

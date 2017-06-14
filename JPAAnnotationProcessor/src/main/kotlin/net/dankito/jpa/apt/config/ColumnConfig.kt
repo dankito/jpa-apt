@@ -9,9 +9,9 @@ import javax.persistence.GenerationType
 
 @JsonIdentityInfo(
         generator = ObjectIdGenerators.UUIDGenerator::class)
-class ColumnConfig(val entityConfig: EntityConfig<*>, val property: Property) {
+class ColumnConfig(val entityConfig: EntityConfig, val property: Property) {
 
-    private constructor() : this(EntityConfig(Any::class.java), Property()) // for Jackson
+    private constructor() : this(EntityConfig(), Property()) // for Jackson
 
 
     var type: Class<*> = property.getType()
@@ -46,7 +46,7 @@ class ColumnConfig(val entityConfig: EntityConfig<*>, val property: Property) {
     // Relation configuration
     var relationType: RelationType = RelationType.None
 
-    var targetEntity: EntityConfig<*>? = null
+    var targetEntity: EntityConfig? = null
     var targetColumn: ColumnConfig? = null
 
     var orphanRemoval = false

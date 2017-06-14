@@ -34,7 +34,7 @@ class AnnotationProcessingContext(val roundEnv: RoundEnvironment) {
     val transientProperties: Set<out Element> = getElementsFor(Transient::class.java)
 
 
-    private val entityConfigRegistry = HashMap<Class<*>, EntityConfig<*>>()
+    private val entityConfigRegistry = HashMap<Class<*>, EntityConfig>()
 
     private val propertyRegistry = HashMap<Field, Property>()
 
@@ -86,15 +86,15 @@ class AnnotationProcessingContext(val roundEnv: RoundEnvironment) {
     }
 
 
-    fun registerEntityConfig(entityConfig: EntityConfig<out Any>) {
+    fun registerEntityConfig(entityConfig: EntityConfig) {
         entityConfigRegistry.put(entityConfig.entityClass, entityConfig)
     }
 
-    fun getEntityConfigForClass(entityClass: Class<*>) : EntityConfig<*>? {
+    fun getEntityConfigForClass(entityClass: Class<*>) : EntityConfig? {
         return entityConfigRegistry[entityClass]
     }
 
-    fun getEntityConfigs() : List<EntityConfig<*>> {
+    fun getEntityConfigs() : List<EntityConfig> {
         return entityConfigRegistry.values.toList()
     }
 
