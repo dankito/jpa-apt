@@ -2,6 +2,7 @@ package net.dankito.jpa.apt.reflection
 
 import net.dankito.jpa.apt.AnnotationProcessingContext
 import net.dankito.jpa.apt.config.Property
+import java.lang.reflect.Constructor
 import java.lang.reflect.Field
 import java.lang.reflect.Method
 import java.lang.reflect.Modifier
@@ -10,6 +11,42 @@ import javax.persistence.Transient
 
 
 class ReflectionHelper {
+
+    /**
+     * Locate the no arg constructor for the class.
+     */
+    @Throws(IllegalArgumentException::class)
+    fun findNoArgConstructor(entityClass: Class<*>): Constructor<*> {
+        val constructors: Array<Constructor<*>>
+        try {
+            constructors = entityClass.declaredConstructors
+            // i do this [grossness] to be able to move the Suppress inside the method
+        } catch (e: Exception) {
+            throw IllegalArgumentException("Can't lookup declared constructors for " + entityClass, e)
+        }
+
+        for(constructor in constructors) {
+            if (constructor.parameterTypes.isEmpty()) {
+                if (!constructor.isAccessible) {
+                    try {
+                        constructor.isAccessible = true
+                    } catch (e: SecurityException) {
+                        throw IllegalArgumentException("Could not open access to constructor for " + entityClass)
+                    }
+
+                }
+                return constructor
+            }
+        }
+
+        if (entityClass.enclosingClass == null) {
+            throw IllegalArgumentException("Can't find a no-arg constructor for " + entityClass)
+        }
+        else {
+            throw IllegalArgumentException("Can't find a no-arg constructor for " + entityClass
+                    + ".  Missing static on inner class?")
+        }
+    }
 
     fun findProperties(fields: List<Field>, methodsMap: MutableMap<String, Method>, context: AnnotationProcessingContext) : List<Property> {
         val properties = ArrayList<Property>()
