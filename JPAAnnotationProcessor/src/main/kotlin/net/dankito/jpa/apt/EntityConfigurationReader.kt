@@ -7,8 +7,7 @@ import java.lang.reflect.Method
 import java.sql.SQLException
 import javax.lang.model.element.Element
 import javax.persistence.*
-
-
+import javax.tools.Diagnostic
 
 
 class EntityConfigurationReader(private val reflectionHelper: ReflectionHelper = ReflectionHelper()) {
@@ -30,6 +29,8 @@ class EntityConfigurationReader(private val reflectionHelper: ReflectionHelper =
 
     @Throws(SQLException::class)
     private fun readEntityConfig(context: AnnotationProcessingContext, entityTypeInfo: EntityTypeInfo, currentInheritanceTypeSubEntities: List<EntityConfig>): EntityConfig {
+        context.processingEnv.messager.printMessage(Diagnostic.Kind.NOTE, "Reading configuration for " + entityTypeInfo.entityClass.simpleName)
+
         val entityConfig = createEntityConfig(entityTypeInfo.entityClass, currentInheritanceTypeSubEntities)
 
         context.registerEntityConfig(entityConfig)
