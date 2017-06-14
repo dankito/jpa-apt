@@ -21,7 +21,7 @@ class JPAAnnotationProcessor : AbstractProcessor() {
 
 
     override fun process(annotations: MutableSet<out TypeElement>?, roundEnv: RoundEnvironment?): Boolean {
-        processingEnv.messager.printMessage(Diagnostic.Kind.NOTE, "Running " + javaClass.simpleName)
+        processingEnv.messager.printMessage(Diagnostic.Kind.NOTE, "Running " + javaClass.simpleName + " for classes ${roundEnv?.rootElements}")
 
         roundEnv?.let { roundEnv ->
             if (roundEnv.processingOver() || annotations?.isEmpty() ?: true) {
