@@ -27,8 +27,8 @@ class FieldDeserializer : StdDeserializer<Field>(Field::class.java) {
     private fun deserializeFieldNode(jsonParser: JsonParser): Field {
         val node = jsonParser.getCodec().readTree<ObjectNode>(jsonParser)
 
-        val className = node.get(SerializerConfig.Companion.ClassNameFieldName).asText()
-        val fieldName = node.get(SerializerConfig.Companion.FieldNameFieldName).asText()
+        val className = node.get(SerializerConfig.ClassNameFieldName).asText()
+        val fieldName = node.get(SerializerConfig.FieldNameFieldName).asText()
 
         try {
             val declaringClass = Class.forName(className)
