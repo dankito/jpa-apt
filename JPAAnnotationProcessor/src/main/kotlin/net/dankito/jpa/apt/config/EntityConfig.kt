@@ -1,16 +1,25 @@
 package net.dankito.jpa.apt.config
 
+import com.fasterxml.jackson.annotation.JsonIdentityInfo
+import com.fasterxml.jackson.annotation.ObjectIdGenerators
 import java.lang.reflect.Constructor
 import java.lang.reflect.Method
 import java.util.*
 import javax.persistence.AccessType
-import javax.persistence.Index
 import javax.persistence.InheritanceType
 import javax.persistence.UniqueConstraint
 import kotlin.collections.ArrayList
 
+@JsonIdentityInfo(
+        generator = ObjectIdGenerators.PropertyGenerator::class,
+        property = "entityClass")
+class EntityConfig<CLASS>() {
 
-class EntityConfig<CLASS>(val entityClass: Class<CLASS>) {
+    constructor(entityClass: Class<CLASS>) : this() {
+        this.entityClass = entityClass
+    }
+
+    lateinit var entityClass: Class<CLASS>
 
     lateinit var tableName: String
 
@@ -18,7 +27,7 @@ class EntityConfig<CLASS>(val entityClass: Class<CLASS>) {
     var access: AccessType? = null
 
     lateinit var idColumn: ColumnConfig
-    lateinit var versionColumn: ColumnConfig
+    var versionColumn: ColumnConfig? = null
     
     var columns = ArrayList<ColumnConfig>()
         private set
@@ -27,8 +36,9 @@ class EntityConfig<CLASS>(val entityClass: Class<CLASS>) {
     // @Table Annotation settings
     var catalogName: String? = null
     var schemaName: String? = null
+    @Transient // TODO: make serializable
     var uniqueConstraints: Array<UniqueConstraint> = arrayOf()
-    var indexes: Array<Index> = arrayOf()
+//    var indexes: Array<Index> = arrayOf() // JPA 2.1
 
     // inheritance
     var classHierarchy: List<Class<*>> = mutableListOf()
