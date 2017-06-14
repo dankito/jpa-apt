@@ -62,8 +62,8 @@ class JsonEntityConfigurationProcessor : IEntityConfigurationProcessor {
         val writer = OutputStreamWriter(file.openOutputStream(), "utf-8")
 
         val classCode = "package " + packageName + ";" + System.lineSeparator() + System.lineSeparator() +
-                "public class GeneratedModel {" + System.lineSeparator() +
-                "    public static final String JSON = \"" + serializedConfiguration.replace("\"", "\\\"") + "\";" + System.lineSeparator() +
+                "public class GeneratedModel {" + System.lineSeparator() + System.lineSeparator() +
+                "    public static final String JSON = \"" + serializedConfiguration.replace("\"", "\\\"") + "\";" + System.lineSeparator() + System.lineSeparator() +
                 "}"
         writer.write(classCode)
 
