@@ -1,5 +1,7 @@
 package net.dankito.jpa.apt
 
+import net.dankito.jpa.apt.config.JpaEntityConfiguration
+import net.dankito.jpa.apt.configurationprocessor.json.JsonEntityConfigurationProcessor
 import org.slf4j.LoggerFactory
 import javax.annotation.processing.AbstractProcessor
 import javax.annotation.processing.RoundEnvironment
@@ -35,9 +37,18 @@ class JPAAnnotationProcessor : AbstractProcessor() {
 
             EntityConfigurationReader().readEntityConfigurations(context)
             ColumnConfigurationReader().readEntityColumns(context)
+
+            val entityConfiguration = createResult(context)
+
+            JsonEntityConfigurationProcessor().processConfiguration(entityConfiguration)
         }
 
         return ALLOW_OTHER_PROCESSORS_TO_CLAIM_ANNOTATIONS
+    }
+
+
+    private fun createResult(context: AnnotationProcessingContext): JpaEntityConfiguration {
+        return JpaEntityConfiguration(context.getEntityConfigs())
     }
 
 }
