@@ -8,6 +8,7 @@ import javax.persistence.GenerationType
 class ColumnConfig(val entityConfig: EntityConfig<*>, val property: Property) {
 
     var type: Class<*> = property.field.type
+    var dataType: DataType? = null
 
     var columnName = property.field.name // default value, may be overwritten by @Column (or other) annotation
     var tableName: String? = null
