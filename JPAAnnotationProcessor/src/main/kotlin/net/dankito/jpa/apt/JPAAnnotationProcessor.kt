@@ -33,7 +33,7 @@ class JPAAnnotationProcessor : AbstractProcessor() {
                 return ALLOW_OTHER_PROCESSORS_TO_CLAIM_ANNOTATIONS
             }
 
-            val context = AnnotationProcessingContext(roundEnv)
+            val context = AnnotationProcessingContext(roundEnv, processingEnv)
 
             EntityConfigurationReader().readEntityConfigurations(context)
             ColumnConfigurationReader().readEntityColumns(context)
