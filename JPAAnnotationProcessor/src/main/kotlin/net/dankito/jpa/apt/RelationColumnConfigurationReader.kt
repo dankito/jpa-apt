@@ -8,6 +8,7 @@ import java.sql.SQLException
 import javax.lang.model.element.Element
 import javax.lang.model.type.MirroredTypeException
 import javax.persistence.*
+import javax.tools.Diagnostic
 
 
 class RelationColumnConfigurationReader {
@@ -50,8 +51,9 @@ class RelationColumnConfigurationReader {
 
         column.fetch = oneToOne.fetch
         if (column.fetch == FetchType.LAZY) {
-            log.warn("FetchType.LAZY as for $column is not supported for @OneToOne relationships as this would require Proxy Generation or Byte code manipulation " +
-                    "like with JavaAssist,  which is not supported on Android. As LAZY is per JPA specification only a hint, it will be in this case silently ignored and Fetch set to  EAGER.")
+            context.processingEnv.messager.printMessage(Diagnostic.Kind.WARNING, "FetchType.LAZY as for $column is not supported for @OneToOne relationships as this would " +
+                    "require Proxy Generation or Byte code manipulation like with JavaAssist,  which is not supported on Android. " +
+                    "As LAZY is per JPA specification only a hint, it will be in this case silently ignored and Fetch set to  EAGER.")
         }
 
         // TODO: what's the difference between JoinColumn.nullable() and OneToOne.optional() ?

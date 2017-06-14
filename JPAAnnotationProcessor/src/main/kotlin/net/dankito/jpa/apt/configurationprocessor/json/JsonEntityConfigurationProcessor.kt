@@ -6,20 +6,15 @@ import com.fasterxml.jackson.databind.module.SimpleModule
 import net.dankito.jpa.apt.config.JpaEntityConfiguration
 import net.dankito.jpa.apt.configurationprocessor.IEntityConfigurationProcessor
 import net.dankito.jpa.apt.configurationprocessor.json.serializer.*
-import org.slf4j.LoggerFactory
 import java.io.OutputStreamWriter
 import java.lang.reflect.Constructor
 import java.lang.reflect.Field
 import java.lang.reflect.Method
 import javax.annotation.processing.ProcessingEnvironment
+import javax.tools.Diagnostic
 
 
 class JsonEntityConfigurationProcessor : IEntityConfigurationProcessor {
-
-    companion object {
-        private val log = LoggerFactory.getLogger(JsonEntityConfigurationProcessor::class.java)
-    }
-
 
     private val objectMapper = ObjectMapper()
 
@@ -51,7 +46,7 @@ class JsonEntityConfigurationProcessor : IEntityConfigurationProcessor {
 
             writeSerializedConfigurationToFile(serializedConfiguration, processingEnv)
         } catch(e: Exception) {
-            log.error("Could not serialize EntityConfiguration", e)
+            processingEnv.messager.printMessage(Diagnostic.Kind.ERROR, "Could not serialize EntityConfiguration: $e")
         }
     }
 
