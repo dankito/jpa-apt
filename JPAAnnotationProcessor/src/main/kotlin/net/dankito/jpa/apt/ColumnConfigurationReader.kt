@@ -51,8 +51,8 @@ class ColumnConfigurationReader(private var relationColumnConfigurationReader: R
             readColumnConfiguration(column, variableElement, context)
         }
 
-        if(property.getter != null) {
-            context.getAnnotationsForMethod(entityConfig.entityClass, property.getter.name)?.let { executableElement ->
+        property.getter?.let { getter ->
+            context.getAnnotationsForMethod(entityConfig.entityClass, getter.name)?.let { executableElement ->
                 readColumnConfiguration(column, executableElement, context)
             }
         }
@@ -163,8 +163,9 @@ class ColumnConfigurationReader(private var relationColumnConfigurationReader: R
             column.canBeNull = basicAnnotation.optional
         }
         else {
+            val getter = column.property.getter
             if(column.property.field.annotations.size == 0 &&
-               (column.property.getter == null || column.property.getter.annotations.size == 0)) {
+               (getter == null || getter.annotations.size == 0)) {
                 // no Annotations neither on Field nor on Get-Method - then per default property gets treated as if
                 // @Basic(fetch = FetchType.EAGER, optional = true) would be set
                 column.fetch = FetchType.EAGER
