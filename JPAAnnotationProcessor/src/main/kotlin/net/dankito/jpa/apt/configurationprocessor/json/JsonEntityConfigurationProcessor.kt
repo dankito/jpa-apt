@@ -46,13 +46,13 @@ class JsonEntityConfigurationProcessor : IEntityConfigurationProcessor {
 
             val deserializedConfiguration = objectMapper.readValue(serializedConfiguration, JpaEntityConfiguration::class.java)
 
-            writeSerializedConfigurationToFile(serializedConfiguration, processingEnv)
+            writeSerializedConfigurationToSourceFile(serializedConfiguration, processingEnv)
         } catch(e: Exception) {
             processingEnv.messager.printMessage(Diagnostic.Kind.ERROR, "Could not serialize EntityConfiguration: $e")
         }
     }
 
-    private fun writeSerializedConfigurationToFile(serializedConfiguration: String, processingEnv: ProcessingEnvironment) {
+    private fun writeSerializedConfigurationToSourceFile(serializedConfiguration: String, processingEnv: ProcessingEnvironment) {
         val packageName = "net.dankito.data_access.database"
         val file = processingEnv.filer.createSourceFile(packageName + ".GeneratedModel")
 
