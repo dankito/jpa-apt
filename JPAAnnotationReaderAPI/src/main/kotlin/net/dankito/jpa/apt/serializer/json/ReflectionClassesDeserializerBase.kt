@@ -1,4 +1,4 @@
-package net.dankito.jpa.apt.configurationprocessor.json.serializer
+package net.dankito.jpa.apt.serializer.json
 
 import com.fasterxml.jackson.core.JsonParser
 import com.fasterxml.jackson.core.JsonProcessingException
@@ -27,7 +27,7 @@ abstract class ReflectionClassesDeserializerBase<T : Member>(clazz: Class<T>) : 
     private fun deserializeReflectionClassNode(jsonParser: JsonParser): T {
         val node = jsonParser.getCodec().readTree<ObjectNode>(jsonParser)
 
-        val className = node.get(SerializerConfig.ClassNameFieldName).asText()
+        val className = node.get(SerializerConfig.Companion.ClassNameFieldName).asText()
 
         try {
             val declaringClass = Class.forName(className)

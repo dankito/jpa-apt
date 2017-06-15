@@ -1,4 +1,4 @@
-package net.dankito.jpa.apt.configurationprocessor.json.serializer
+package net.dankito.jpa.apt.serializer.json
 
 import com.fasterxml.jackson.databind.node.ObjectNode
 import java.lang.reflect.Method

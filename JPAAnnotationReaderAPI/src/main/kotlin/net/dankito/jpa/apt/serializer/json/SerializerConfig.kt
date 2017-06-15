@@ -1,4 +1,4 @@
-package net.dankito.jpa.apt.configurationprocessor.json.serializer
+package net.dankito.jpa.apt.serializer.json
 
 
 class SerializerConfig {
