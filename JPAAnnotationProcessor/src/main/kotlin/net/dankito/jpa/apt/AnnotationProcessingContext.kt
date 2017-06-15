@@ -53,7 +53,10 @@ class AnnotationProcessingContext(val roundEnv: RoundEnvironment, val processing
     private fun getElementsFor(annotationClass: Class<out Annotation>) = roundEnv.getElementsAnnotatedWith(annotationClass)
 
     private fun categorizeElements() {
-        roundEnv.rootElements.filter { it is TypeElement && hasEntityOrMappedSuperclassAnnotation(it) }.forEach { element ->
+        val entitiesAndMappedSuperclasses = LinkedHashSet<Element>(roundEnv.getElementsAnnotatedWith(MappedSuperclass::class.java))
+        entitiesAndMappedSuperclasses.addAll(roundEnv.getElementsAnnotatedWith(Entity::class.java))
+
+        entitiesAndMappedSuperclasses.forEach { element ->
             try {
                 createEntityTypeInfoForElement(element)
             } catch(e: Exception) { processingEnv.messager.printMessage(Diagnostic.Kind.ERROR, "Could not create EntityTypeInfo for element $element: $e", element) }
