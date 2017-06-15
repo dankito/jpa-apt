@@ -9,7 +9,6 @@ import java.sql.SQLException
 import javax.lang.model.element.Element
 import javax.lang.model.element.ElementKind
 import javax.persistence.*
-import javax.tools.Diagnostic
 
 
 class ColumnConfigurationReader(private var relationColumnConfigurationReader: RelationColumnConfigurationReader = RelationColumnConfigurationReader(),
@@ -63,7 +62,7 @@ class ColumnConfigurationReader(private var relationColumnConfigurationReader: R
 
     private fun readColumnConfiguration(column: ColumnConfig, element: Element, context: AnnotationProcessingContext) {
         readIdConfiguration(column, element)
-        readVersionConfiguration(column, element, context)
+        readVersionConfiguration(column, element)
 
         readLobAnnotation(column, element)
         readBasicAnnotation(column, element)
@@ -119,10 +118,8 @@ class ColumnConfigurationReader(private var relationColumnConfigurationReader: R
         }
     }
 
-    private fun readVersionConfiguration(column: ColumnConfig, element: Element, context: AnnotationProcessingContext) {
+    private fun readVersionConfiguration(column: ColumnConfig, element: Element) {
         element.getAnnotation(Version::class.java)?.let { version ->
-            context.processingEnv.messager.printMessage(Diagnostic.Kind.NOTE, "Column type is ${column.type.canonicalName}, Long is ${Long::class.java.canonicalName}. Column type == Long =" +
-                    " ${column.type == Long::class.java}, isObjectType = ${column.type == Long::class.javaObjectType}")
             if(isValidDataTypeForVersion(column.type) == false) {
                 throw SQLException("Data Type for @Version property $column is ${column.type} but must be one of these types: " +
                         "int, Integer, short, Short, long, Long, java.sql.Timestamp.")
