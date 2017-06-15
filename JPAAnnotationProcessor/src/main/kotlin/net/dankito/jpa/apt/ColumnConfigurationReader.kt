@@ -121,7 +121,8 @@ class ColumnConfigurationReader(private var relationColumnConfigurationReader: R
     private fun readVersionConfiguration(column: ColumnConfig, element: Element) {
         element.getAnnotation(Version::class.java)?.let { version ->
             if(isValidDataTypeForVersion(column.type) == false) {
-                throw SQLException("Data Type for @Version property $column must be one of these types: int, Integer, short, Short, long, Long, java.sql.Timestamp.")
+                throw SQLException("Data Type for @Version property $column is ${column.type} but must be one of these types: " +
+                        "int, Integer, short, Short, long, Long, java.sql.Timestamp.")
             }
 
             column.isVersion = true
