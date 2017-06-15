@@ -1,6 +1,6 @@
 package net.dankito.jpa.apt
 
-import net.dankito.jpa.apt.config.JpaEntityConfiguration
+import net.dankito.jpa.apt.config.JPAEntityConfiguration
 import net.dankito.jpa.apt.configurationprocessor.json.JsonEntityConfigurationProcessor
 import javax.annotation.processing.AbstractProcessor
 import javax.annotation.processing.RoundEnvironment
@@ -56,8 +56,8 @@ class JPAAnnotationProcessor : AbstractProcessor() {
     }
 
 
-    private fun createResult(context: AnnotationProcessingContext): JpaEntityConfiguration {
-        return JpaEntityConfiguration(context.getEntityConfigs())
+    private fun createResult(context: AnnotationProcessingContext): JPAEntityConfiguration {
+        return JPAEntityConfiguration(context.getEntityConfigs())
     }
 
 }

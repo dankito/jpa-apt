@@ -1,19 +1,19 @@
 package net.dankito.jpa.apt.serializer
 
-import net.dankito.jpa.apt.config.JpaEntityConfiguration
+import net.dankito.jpa.apt.config.JPAEntityConfiguration
 import java.io.InputStream
 import java.net.URL
 
 
 interface IJPAEntityConfigurationSerializer {
 
-    fun serializeJPAEntityConfiguration(entityConfiguration: JpaEntityConfiguration): String
+    fun serializeJPAEntityConfiguration(entityConfiguration: JPAEntityConfiguration): String
 
 
-    fun deserializeJPAEntityConfiguration(serializedEntityConfiguration: String): JpaEntityConfiguration
+    fun deserializeJPAEntityConfiguration(serializedEntityConfiguration: String): JPAEntityConfiguration
 
-    fun deserializeJPAEntityConfiguration(serializedEntityConfigurationUrl: URL): JpaEntityConfiguration
+    fun deserializeJPAEntityConfiguration(serializedEntityConfigurationUrl: URL): JPAEntityConfiguration
 
-    fun deserializeJPAEntityConfiguration(inputStream: InputStream): JpaEntityConfiguration
+    fun deserializeJPAEntityConfiguration(inputStream: InputStream): JPAEntityConfiguration
 
 }

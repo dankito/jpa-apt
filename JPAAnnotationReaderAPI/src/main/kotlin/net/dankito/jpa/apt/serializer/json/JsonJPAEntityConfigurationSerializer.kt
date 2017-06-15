@@ -3,7 +3,7 @@ package net.dankito.jpa.apt.serializer.json
 import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.module.SimpleModule
-import net.dankito.jpa.apt.config.JpaEntityConfiguration
+import net.dankito.jpa.apt.config.JPAEntityConfiguration
 import net.dankito.jpa.apt.serializer.IJPAEntityConfigurationSerializer
 import java.io.InputStream
 import java.lang.reflect.Constructor
@@ -38,20 +38,20 @@ class JsonJPAEntityConfigurationSerializer : IJPAEntityConfigurationSerializer {
     }
 
 
-    override fun serializeJPAEntityConfiguration(entityConfiguration: JpaEntityConfiguration): String {
+    override fun serializeJPAEntityConfiguration(entityConfiguration: JPAEntityConfiguration): String {
         return objectMapper.writeValueAsString(entityConfiguration)
     }
 
-    override fun deserializeJPAEntityConfiguration(serializedEntityConfiguration: String): JpaEntityConfiguration {
-        return objectMapper.readValue(serializedEntityConfiguration, JpaEntityConfiguration::class.java)
+    override fun deserializeJPAEntityConfiguration(serializedEntityConfiguration: String): JPAEntityConfiguration {
+        return objectMapper.readValue(serializedEntityConfiguration, JPAEntityConfiguration::class.java)
     }
 
-    override fun deserializeJPAEntityConfiguration(serializedEntityConfigurationUrl: URL): JpaEntityConfiguration {
-        return objectMapper.readValue(serializedEntityConfigurationUrl, JpaEntityConfiguration::class.java)
+    override fun deserializeJPAEntityConfiguration(serializedEntityConfigurationUrl: URL): JPAEntityConfiguration {
+        return objectMapper.readValue(serializedEntityConfigurationUrl, JPAEntityConfiguration::class.java)
     }
 
-    override fun deserializeJPAEntityConfiguration(inputStream: InputStream): JpaEntityConfiguration {
-        return objectMapper.readValue(inputStream, JpaEntityConfiguration::class.java)
+    override fun deserializeJPAEntityConfiguration(inputStream: InputStream): JPAEntityConfiguration {
+        return objectMapper.readValue(inputStream, JPAEntityConfiguration::class.java)
     }
 
 }

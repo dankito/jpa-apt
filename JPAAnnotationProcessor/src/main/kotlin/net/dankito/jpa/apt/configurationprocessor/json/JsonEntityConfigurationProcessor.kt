@@ -1,6 +1,6 @@
 package net.dankito.jpa.apt.configurationprocessor.json
 
-import net.dankito.jpa.apt.config.JpaEntityConfiguration
+import net.dankito.jpa.apt.config.JPAEntityConfiguration
 import net.dankito.jpa.apt.configurationprocessor.IEntityConfigurationProcessor
 import net.dankito.jpa.apt.serializer.IJPAEntityConfigurationSerializer
 import net.dankito.jpa.apt.serializer.json.JsonJPAEntityConfigurationSerializer
@@ -14,7 +14,7 @@ class JsonEntityConfigurationProcessor(private val entityConfigurationSerializer
     : IEntityConfigurationProcessor {
 
 
-    override fun processConfiguration(entityConfiguration: JpaEntityConfiguration, processingEnv: ProcessingEnvironment) {
+    override fun processConfiguration(entityConfiguration: JPAEntityConfiguration, processingEnv: ProcessingEnvironment) {
         try {
             val serializedConfiguration = entityConfigurationSerializer.serializeJPAEntityConfiguration(entityConfiguration)
 
