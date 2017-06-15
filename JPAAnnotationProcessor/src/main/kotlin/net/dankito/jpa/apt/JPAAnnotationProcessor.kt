@@ -12,7 +12,7 @@ import javax.persistence.Entity
 import javax.tools.Diagnostic
 
 
-@SupportedAnnotationTypes("javax.persistence.Entity", "javax.persistence.MappedSuperclass", "javax.persistence.Transient")
+@SupportedAnnotationTypes("javax.persistence.*")
 @SupportedSourceVersion(SourceVersion.RELEASE_7)
 class JPAAnnotationProcessor : AbstractProcessor() {
 
