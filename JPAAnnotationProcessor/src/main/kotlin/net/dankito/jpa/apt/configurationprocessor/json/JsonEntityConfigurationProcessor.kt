@@ -12,6 +12,7 @@ import java.lang.reflect.Field
 import java.lang.reflect.Method
 import javax.annotation.processing.ProcessingEnvironment
 import javax.tools.Diagnostic
+import javax.tools.StandardLocation
 
 
 class JsonEntityConfigurationProcessor : IEntityConfigurationProcessor {
@@ -46,7 +47,7 @@ class JsonEntityConfigurationProcessor : IEntityConfigurationProcessor {
 
             val deserializedConfiguration = objectMapper.readValue(serializedConfiguration, JpaEntityConfiguration::class.java)
 
-            writeSerializedConfigurationToSourceFile(serializedConfiguration, processingEnv)
+            writeSerializedConfigurationToResourceFile(serializedConfiguration, processingEnv)
         } catch(e: Exception) {
             processingEnv.messager.printMessage(Diagnostic.Kind.ERROR, "Could not serialize EntityConfiguration: $e")
         }
@@ -65,6 +66,18 @@ class JsonEntityConfigurationProcessor : IEntityConfigurationProcessor {
                 "    }" + System.lineSeparator() + System.lineSeparator() +
                 "}"
         writer.write(classCode)
+
+        writer.flush()
+        writer.close()
+    }
+
+    private fun writeSerializedConfigurationToResourceFile(serializedConfiguration: String, processingEnv: ProcessingEnvironment) {
+        val file = processingEnv.filer.createResource(StandardLocation.CLASS_OUTPUT, "", "GeneratedModel.json")
+        processingEnv.messager.printMessage(Diagnostic.Kind.NOTE, "File Uri = ${file.toUri()}")
+
+        val writer = OutputStreamWriter(file.openOutputStream(), "utf-8")
+
+        writer.write(serializedConfiguration)
 
         writer.flush()
         writer.close()
