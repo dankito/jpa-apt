@@ -8,7 +8,6 @@ import javax.annotation.processing.SupportedAnnotationTypes
 import javax.annotation.processing.SupportedSourceVersion
 import javax.lang.model.SourceVersion
 import javax.lang.model.element.TypeElement
-import javax.persistence.Entity
 import javax.tools.Diagnostic
 
 
@@ -22,8 +21,7 @@ class JPAAnnotationProcessor : AbstractProcessor() {
 
 
     override fun process(annotations: MutableSet<out TypeElement>?, roundEnv: RoundEnvironment?): Boolean {
-        processingEnv.messager.printMessage(Diagnostic.Kind.NOTE, "Running " + javaClass.simpleName + " for classes ${roundEnv?.rootElements}")
-        processingEnv.messager.printMessage(Diagnostic.Kind.NOTE, "Elements with @Entity ${roundEnv?.getElementsAnnotatedWith(Entity::class.java)}")
+        processingEnv.messager.printMessage(Diagnostic.Kind.NOTE, "Running " + javaClass.simpleName)
 
         roundEnv?.let { roundEnv ->
             if (roundEnv.processingOver() || annotations?.isEmpty() ?: true) {
