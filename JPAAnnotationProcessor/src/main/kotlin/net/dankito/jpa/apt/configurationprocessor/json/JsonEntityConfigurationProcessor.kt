@@ -53,7 +53,6 @@ class JsonEntityConfigurationProcessor : IEntityConfigurationProcessor {
 
     private fun writeSerializedConfigurationToResourceFile(serializedConfiguration: String, processingEnv: ProcessingEnvironment) {
         val file = processingEnv.filer.createResource(StandardLocation.CLASS_OUTPUT, "", "GeneratedModel.json")
-        processingEnv.messager.printMessage(Diagnostic.Kind.NOTE, "File Uri = ${file.toUri()}")
 
         val writer = OutputStreamWriter(file.openOutputStream(), "utf-8")
 
