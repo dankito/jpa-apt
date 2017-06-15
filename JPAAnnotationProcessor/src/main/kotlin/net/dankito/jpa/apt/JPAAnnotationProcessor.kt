@@ -2,7 +2,6 @@ package net.dankito.jpa.apt
 
 import net.dankito.jpa.apt.config.JpaEntityConfiguration
 import net.dankito.jpa.apt.configurationprocessor.json.JsonEntityConfigurationProcessor
-import org.slf4j.LoggerFactory
 import javax.annotation.processing.AbstractProcessor
 import javax.annotation.processing.RoundEnvironment
 import javax.annotation.processing.SupportedAnnotationTypes
@@ -16,8 +15,6 @@ class JPAAnnotationProcessor : AbstractProcessor() {
 
     companion object {
         const val ALLOW_OTHER_PROCESSORS_TO_CLAIM_ANNOTATIONS: Boolean = true
-
-        private val log = LoggerFactory.getLogger(JPAAnnotationProcessor::class.java)
     }
 
 
