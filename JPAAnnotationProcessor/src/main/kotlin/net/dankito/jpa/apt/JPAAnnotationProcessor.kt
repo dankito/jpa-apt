@@ -21,10 +21,6 @@ class JPAAnnotationProcessor : AbstractProcessor() {
     }
 
 
-    override fun getSupportedAnnotationTypes(): MutableSet<String> {
-        return mutableSetOf("javax.persistence.Entity", "javax.persistence.MappedSuperclass", "javax.persistence.Transient")
-    }
-
     override fun process(annotations: MutableSet<out TypeElement>?, roundEnv: RoundEnvironment?): Boolean {
         processingEnv.messager.printMessage(Diagnostic.Kind.NOTE, "Running " + javaClass.simpleName + " for classes ${roundEnv?.rootElements}")
         processingEnv.messager.printMessage(Diagnostic.Kind.NOTE, "Elements with @Entity ${roundEnv?.getElementsAnnotatedWith(Entity::class.java)}")
