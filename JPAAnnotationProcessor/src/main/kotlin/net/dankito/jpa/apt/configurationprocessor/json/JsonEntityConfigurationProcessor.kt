@@ -44,6 +44,8 @@ class JsonEntityConfigurationProcessor : IEntityConfigurationProcessor {
         try {
             val serializedConfiguration = objectMapper.writeValueAsString(entityConfiguration)
 
+            val deserializedConfiguration = objectMapper.readValue(serializedConfiguration, JpaEntityConfiguration::class.java)
+
             writeSerializedConfigurationToFile(serializedConfiguration, processingEnv)
         } catch(e: Exception) {
             processingEnv.messager.printMessage(Diagnostic.Kind.ERROR, "Could not serialize EntityConfiguration: $e")
@@ -58,7 +60,9 @@ class JsonEntityConfigurationProcessor : IEntityConfigurationProcessor {
 
         val classCode = "package " + packageName + ";" + System.lineSeparator() + System.lineSeparator() +
                 "public class GeneratedModel {" + System.lineSeparator() + System.lineSeparator() +
-                "    public static final String JSON = \"" + serializedConfiguration.replace("\"", "\\\"") + "\";" + System.lineSeparator() + System.lineSeparator() +
+                "    public static String getJson() {" + System.lineSeparator() +
+                "        return \"" + serializedConfiguration.replace("\"", "\\\"") + "\";" + System.lineSeparator() +
+                "    }" + System.lineSeparator() + System.lineSeparator() +
                 "}"
         writer.write(classCode)
 
