@@ -1,49 +1,22 @@
 package net.dankito.jpa.apt.configurationprocessor.json
 
-import com.fasterxml.jackson.databind.DeserializationFeature
-import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.databind.module.SimpleModule
 import net.dankito.jpa.apt.config.JpaEntityConfiguration
 import net.dankito.jpa.apt.configurationprocessor.IEntityConfigurationProcessor
-import net.dankito.jpa.apt.configurationprocessor.json.serializer.*
+import net.dankito.jpa.apt.serializer.IJPAEntityConfigurationSerializer
+import net.dankito.jpa.apt.serializer.json.JsonJPAEntityConfigurationSerializer
 import java.io.OutputStreamWriter
-import java.lang.reflect.Constructor
-import java.lang.reflect.Field
-import java.lang.reflect.Method
 import javax.annotation.processing.ProcessingEnvironment
 import javax.tools.Diagnostic
 import javax.tools.StandardLocation
 
 
-class JsonEntityConfigurationProcessor : IEntityConfigurationProcessor {
-
-    private val objectMapper = ObjectMapper()
-
-    init {
-        objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
-
-        val module = SimpleModule()
-
-        module.addSerializer(Field::class.java, FieldSerializer())
-        module.addDeserializer(Field::class.java, FieldDeserializer())
-
-        module.addSerializer(Method::class.java, MethodSerializer())
-        module.addDeserializer(Method::class.java, MethodDeserializer())
-
-        module.addSerializer(Constructor::class.java, ConstructorSerializer())
-        module.addDeserializer(Constructor::class.java, ConstructorDeserializer())
-
-        objectMapper.registerModule(module)
-
-        // only serialize fields
-//        objectMapper.setVisibility(PropertyAccessor.ALL, JsonAutoDetect.Visibility.NONE)
-//        objectMapper.setVisibility(PropertyAccessor.FIELD, JsonAutoDetect.Visibility.ANY)
-    }
+class JsonEntityConfigurationProcessor(private val entityConfigurationSerializer: IJPAEntityConfigurationSerializer = JsonJPAEntityConfigurationSerializer())
+    : IEntityConfigurationProcessor {
 
 
     override fun processConfiguration(entityConfiguration: JpaEntityConfiguration, processingEnv: ProcessingEnvironment) {
         try {
-            val serializedConfiguration = objectMapper.writeValueAsString(entityConfiguration)
+            val serializedConfiguration = entityConfigurationSerializer.serializeJPAEntityConfiguration(entityConfiguration)
 
             writeSerializedConfigurationToResourceFile(serializedConfiguration, processingEnv)
         } catch(e: Exception) {
