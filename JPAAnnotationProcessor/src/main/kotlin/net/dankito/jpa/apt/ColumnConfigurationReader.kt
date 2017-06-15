@@ -131,8 +131,9 @@ class ColumnConfigurationReader(private var relationColumnConfigurationReader: R
     }
 
     private fun isValidDataTypeForVersion(type: Class<*>): Boolean { // according to http://www.objectdb.com/api/java/jpa/Version
-        return Long::class.javaPrimitiveType == type || Long::class.java == type || Int::class.javaPrimitiveType == type || Int::class.java == type ||
-                Short::class.javaPrimitiveType == type || Short::class.java == type || java.sql.Timestamp::class.java == type
+        return Long::class.javaPrimitiveType == type || Long::class.java == type || Long::class.javaObjectType == type
+                || Int::class.javaPrimitiveType == type || Int::class.java == type || Int::class.javaObjectType == type
+                || Short::class.javaPrimitiveType == type || Short::class.java == type || Short::class.javaObjectType == type || java.sql.Timestamp::class.java == type
     }
 
     private fun readLobAnnotation(column: ColumnConfig, element: Element) {
