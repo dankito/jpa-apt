@@ -5,6 +5,7 @@ import net.dankito.jpa.apt.configurationprocessor.json.JsonEntityConfigurationPr
 import javax.annotation.processing.AbstractProcessor
 import javax.annotation.processing.RoundEnvironment
 import javax.annotation.processing.SupportedAnnotationTypes
+import javax.annotation.processing.SupportedSourceVersion
 import javax.lang.model.SourceVersion
 import javax.lang.model.element.TypeElement
 import javax.persistence.Entity
@@ -12,16 +13,13 @@ import javax.tools.Diagnostic
 
 
 @SupportedAnnotationTypes("javax.persistence.Entity", "javax.persistence.MappedSuperclass", "javax.persistence.Transient")
+@SupportedSourceVersion(SourceVersion.RELEASE_7)
 class JPAAnnotationProcessor : AbstractProcessor() {
 
     companion object {
         const val ALLOW_OTHER_PROCESSORS_TO_CLAIM_ANNOTATIONS: Boolean = true
     }
 
-
-    override fun getSupportedSourceVersion(): SourceVersion {
-        return SourceVersion.RELEASE_7
-    }
 
     override fun getSupportedAnnotationTypes(): MutableSet<String> {
         return mutableSetOf("javax.persistence.Entity", "javax.persistence.MappedSuperclass", "javax.persistence.Transient")
