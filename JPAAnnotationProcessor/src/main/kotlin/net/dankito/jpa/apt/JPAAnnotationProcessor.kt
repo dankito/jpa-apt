@@ -10,7 +10,7 @@ import javax.lang.model.element.TypeElement
 import javax.tools.Diagnostic
 
 
-@SupportedAnnotationTypes("javax.persistence.*")
+@SupportedAnnotationTypes("javax.persistence.Entity", "javax.persistence.MappedSuperclass", "javax.persistence.Transient")
 class JPAAnnotationProcessor : AbstractProcessor() {
 
     companion object {
