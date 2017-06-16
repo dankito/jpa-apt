@@ -104,18 +104,12 @@ class EntityConfigurationReader(private val reflectionHelper: ReflectionHelper =
 
 
     private fun findLifeCycleEvents(entityConfig: EntityConfig) {
-        for(classWalk in entityConfig.classHierarchy) {
-            for(method in classWalk.declaredMethods) {
-                checkMethodForLifeCycleEvents(method, entityConfig)
-            }
+        for(method in entityConfig.entityClass.declaredMethods) {
+            checkMethodForLifeCycleEvents(method, entityConfig)
         }
     }
 
     private fun checkMethodForLifeCycleEvents(method: Method, entityConfig: EntityConfig) {
-        //    List<Annotation> methodAnnotations = Arrays.asList(method.getAnnotations());
-
-        // TODO: i don't know what the specifications says but i implemented it this way that superclass life cycle events don't overwrite that ones from child classes
-        // (or should both be called?)
         if (method.isAnnotationPresent(PrePersist::class.java))
             entityConfig.addPrePersistLifeCycleMethod(method)
         if (method.isAnnotationPresent(PostPersist::class.java))
