@@ -105,7 +105,11 @@ class SourceCodeGeneratorEntityConfigurationProcessor : IEntityConfigurationProc
             "null"
         }
         else {
-            "this.getEntityClass().getDeclaredMethod(\"" + property.setter?.name + "\")"
+            var parameterType = property.field.type.name
+            if(parameterType == "[B") { // Kotlin ByteArray states itself as "[B"
+                parameterType = "byte[]"
+            }
+            "this.getEntityClass().getDeclaredMethod(\"" + property.setter?.name + "\", " + parameterType + ".class)"
         }
 
         val createColumnConfigMethodBuilder = MethodSpec.methodBuilder(createColumnConfigMethodName)
