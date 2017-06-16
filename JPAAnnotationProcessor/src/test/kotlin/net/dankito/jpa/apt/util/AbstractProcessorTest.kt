@@ -29,7 +29,7 @@ abstract class AbstractProcessorTest {
 
         protected val testEntitiesPath = File(packagePath, "test_entities")
 
-        protected val OutputDirectoryName = "output"
+        protected val OutputDirectoryName = "generated"
     }
 
 
@@ -45,7 +45,7 @@ abstract class AbstractProcessorTest {
 
     @Throws(IOException::class)
     protected fun process(processorClass: Class<out AbstractProcessor>, classes: List<String>, target: String) {
-        val out = File("target/" + target)
+        val out = File("build/" + target)
         deleteFile(out)
         if (!out.mkdirs()) {
             //            Assert.fail("Creation of " + out.getPath() + " failed");
@@ -57,7 +57,7 @@ abstract class AbstractProcessorTest {
     protected fun compile(processorClass: Class<out AbstractProcessor>, classes: List<String>, target: String) {
         val options = ArrayList<String>(classes.size + 3)
         options.add("-s")
-        options.add("target/" + target)
+        options.add("build/" + target)
         options.add("-proc:only")
         options.add("-processor")
         options.add(processorClass.name)
