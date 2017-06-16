@@ -2,6 +2,8 @@ ext {
 
     kotlinVersion = '1.1.2-5'
 
+    javaxPersistenceVersion = '2.1.1'
+
     slf4jVersion = '1.7.25'
 
     javaPoetVersion = '1.9.0'

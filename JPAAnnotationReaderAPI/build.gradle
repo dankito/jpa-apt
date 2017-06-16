@@ -11,7 +11,7 @@ sourceCompatibility = 1.7
 dependencies {
     compile "org.jetbrains.kotlin:kotlin-stdlib:$kotlinVersion"
 
-    compile "org.hibernate.javax.persistence:hibernate-jpa-2.1-api:1.0.0.Final"
+    compile "org.eclipse.persistence:javax.persistence:$javaxPersistenceVersion"
 
     compile "org.slf4j:slf4j-api:$slf4jVersion"
 
