@@ -2,12 +2,40 @@ package net.dankito.jpa.apt.configurationprocessor.source
 
 import com.squareup.javapoet.ClassName
 import net.dankito.jpa.apt.config.EntityConfig
+import net.dankito.jpa.apt.config.JPAEntityConfiguration
 
 
-class SourceCodeGeneratorContext {
+class SourceCodeGeneratorContext(entityConfiguration: JPAEntityConfiguration) {
 
-    val classNamesToEntityConfigsMap = HashMap<ClassName, EntityConfig>()
+    private val entityConfigsOrderedHierarchically = LinkedHashSet<EntityConfig>()
 
+    private val classNamesToEntityConfigsMap = HashMap<ClassName, EntityConfig>()
+
+    init {
+        entityConfigsOrderedHierarchically.addAll(entityConfiguration.entities.filter { it.parentEntity == null })
+
+        addChildrenRecursively(entityConfigsOrderedHierarchically, entityConfigsOrderedHierarchically)
+    }
+
+    private fun addChildrenRecursively(sortedList: LinkedHashSet<EntityConfig>, entityConfigsFromLastRound: Collection<EntityConfig>) {
+        val addedChildEntities = LinkedHashSet<EntityConfig>()
+
+        entityConfigsFromLastRound.forEach {
+            it.childEntities.forEach { childEntity ->
+                sortedList.add(childEntity)
+                addedChildEntities.add(childEntity)
+            }
+        }
+
+        if(addedChildEntities.size > 0) {
+            addChildrenRecursively(sortedList, addedChildEntities)
+        }
+    }
+
+
+    fun getEntityConfigsOrderedHierarchically(): Collection<EntityConfig> {
+        return entityConfigsOrderedHierarchically
+    }
 
     fun addEntityConfig(className: ClassName, entityConfig: EntityConfig) {
         classNamesToEntityConfigsMap.put(className, entityConfig)
