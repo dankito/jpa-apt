@@ -33,10 +33,10 @@ class SourceCodeGeneratorEntityConfigurationProcessor : IEntityConfigurationProc
                 .addStatement("this.\$N = \$S", "tableName", entityConfig.tableName)
 
         if(entityConfig.access == null) {
-            constructorBuilder.addStatement("this.\$N = null", "access")
+            constructorBuilder.addStatement("this.setAccess(null)")
         }
         else {
-            constructorBuilder.addStatement("this.\$N = \$T.\$L", "access", ClassName.get(AccessType::class.java), entityConfig.access.toString())
+            constructorBuilder.addStatement("this.setAccess(\$T.\$L)", ClassName.get(AccessType::class.java), entityConfig.access.toString())
         }
         val constructor = constructorBuilder.build()
 
