@@ -95,7 +95,7 @@ class SimpleCompiler @JvmOverloads constructor(private val compiler: JavaCompile
 
         //    private static final Joiner pathJoiner = Joiner.on(File.pathSeparator);
 
-        protected fun isSureFireBooter(cl: URLClassLoader): Boolean {
+        private fun isSureFireBooter(cl: URLClassLoader): Boolean {
             for (url in cl.urLs) {
                 if (url.path.contains("surefirebooter")) {
                     return true
@@ -120,13 +120,13 @@ class SimpleCompiler @JvmOverloads constructor(private val compiler: JavaCompile
                         paths.add(File(decodedPath).absolutePath)
                     }
                 } else {
-                    var c: ClassLoader = cl
-                    while (c is URLClassLoader) {
-                        for (url in c.urLs) {
+                    var classLoader: ClassLoader? = cl
+                    while (classLoader is URLClassLoader) {
+                        for (url in classLoader.urLs) {
                             val decodedPath = URLDecoder.decode(url.path, "UTF-8")
                             paths.add(File(decodedPath).absolutePath)
                         }
-                        c = c.getParent()
+                        classLoader = classLoader.getParent()
                     }
                 }
                 //            return pathJoiner.join(paths);
