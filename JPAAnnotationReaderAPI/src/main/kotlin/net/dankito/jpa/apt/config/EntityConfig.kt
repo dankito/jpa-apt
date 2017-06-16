@@ -55,12 +55,19 @@ open class EntityConfig(val entityClass: Class<*>, val constructor: Constructor<
 
     // Life Cycle Events
     var prePersistLifeCycleMethods = ArrayList<Method>()
+        private set
     var postPersistLifeCycleMethods = ArrayList<Method>()
+        private set
     var postLoadLifeCycleMethods = ArrayList<Method>()
+        private set
     var preUpdateLifeCycleMethods = ArrayList<Method>()
+        private set
     var postUpdateLifeCycleMethods = ArrayList<Method>()
+        private set
     var preRemoveLifeCycleMethods = ArrayList<Method>()
+        private set
     var postRemoveLifeCycleMethods = ArrayList<Method>()
+        private set
 
 
     fun addPrePersistLifeCycleMethod(method: Method) {
