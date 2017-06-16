@@ -7,6 +7,7 @@ import java.lang.Exception
 import javax.annotation.processing.ProcessingEnvironment
 import javax.lang.model.element.Modifier
 import javax.persistence.AccessType
+import javax.persistence.CascadeType
 import javax.persistence.FetchType
 import javax.persistence.GenerationType
 
@@ -148,6 +149,15 @@ class SourceCodeGeneratorEntityConfigurationProcessor : IEntityConfigurationProc
                 .addStatement("column.setFetch(\$T.\$L)", ClassName.get(FetchType::class.java), columnConfig.fetch)
 
                 .addStatement("column.setRelationType(\$T.\$L)", ClassName.get(RelationType::class.java), columnConfig.relationType)
+
+                // TODO: add target entity
+
+                .addStatement("column.setOrphanRemoval(\$L)", columnConfig.orphanRemoval)
+                .addStatement("column.setReferencedColumnName(\$S)", columnConfig.referencedColumnName)
+
+                .addStatement("column.setJoinColumn(\$L)", columnConfig.isJoinColumn)
+
+                .addStatement("column.setCascade(new \$T[] { \$N })", ClassName.get(CascadeType::class.java), columnConfig.cascade.joinToString { "CascadeType." + it.toString() })
 
                 .addStatement("return column")
 
