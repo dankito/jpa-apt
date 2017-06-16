@@ -14,15 +14,15 @@ import javax.persistence.GenerationType
 class SourceCodeGeneratorEntityConfigurationProcessor : IEntityConfigurationProcessor {
 
     override fun processConfiguration(entityConfiguration: JPAEntityConfiguration, processingEnv: ProcessingEnvironment) {
-        val context = SourceCodeGeneratorContext()
+        val context = SourceCodeGeneratorContext(entityConfiguration)
 
-        createEntityConfigClasses(entityConfiguration, context, processingEnv)
+        createEntityConfigClasses(context, processingEnv)
 
         createEntityConfigClassesLoader(context, processingEnv)
     }
 
-    private fun createEntityConfigClasses(entityConfiguration: JPAEntityConfiguration, context: SourceCodeGeneratorContext, processingEnv: ProcessingEnvironment) {
-        entityConfiguration.entities.forEach { createEntityConfigClass(it, context, processingEnv) }
+    private fun createEntityConfigClasses(context: SourceCodeGeneratorContext, processingEnv: ProcessingEnvironment) {
+        context.getEntityConfigsOrderedHierarchically().forEach { createEntityConfigClass(it, context, processingEnv) }
     }
 
     private fun createEntityConfigClass(entityConfig: EntityConfig, context: SourceCodeGeneratorContext, processingEnv: ProcessingEnvironment) {
@@ -161,7 +161,8 @@ class SourceCodeGeneratorEntityConfigurationProcessor : IEntityConfigurationProc
                 .returns(listOfEntityConfigs)
                 .addStatement("\$T result = new \$T<>()", listOfEntityConfigs, arrayList)
 
-        for((className, entityConfig) in context.classNamesToEntityConfigsMap) {
+        for(entityConfig in context.getEntityConfigsOrderedHierarchically()) {
+            val className = context.getClassName(entityConfig)
             val parentEntity = entityConfig.parentEntity
             val parentEntityVariableName = if(parentEntity == null) "null" else getEntityConfigVariableName(context.getClassName(parentEntity))
 
