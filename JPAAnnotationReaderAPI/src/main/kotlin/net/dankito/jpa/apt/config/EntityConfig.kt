@@ -25,7 +25,8 @@ open class EntityConfig(val entityClass: Class<*>, val constructor: Constructor<
 
     lateinit var tableName: String
 
-    var access: AccessType? = null
+    // TODO: call that one from parent? (or set value when parent's value is set?)
+    var access: AccessType? = null // TODO: may not be null
 
     lateinit var idColumn: ColumnConfig
     var versionColumn: ColumnConfig? = null
