@@ -50,6 +50,8 @@ class SourceCodeGeneratorEntityConfigurationProcessor : IEntityConfigurationProc
             constructorBuilder.addStatement("this.setAccess(\$T.\$L)", ClassName.get(AccessType::class.java), entityConfig.access.toString())
         }
 
+        addColumnConfigs(entityClassBuilder, constructorBuilder, entityConfig)
+
         val constructor = constructorBuilder.build()
 
         val entityClass = entityClassBuilder
@@ -62,6 +64,81 @@ class SourceCodeGeneratorEntityConfigurationProcessor : IEntityConfigurationProc
         javaFile.writeTo(processingEnv.filer)
 
         context.addEntityConfig(ClassName.get(packageName, className), entityConfig)
+    }
+
+    private fun addColumnConfigs(entityClassBuilder: TypeSpec.Builder, constructorBuilder: MethodSpec.Builder, entityConfig: EntityConfig) {
+        val columnConfigName = ClassName.get(ColumnConfig::class.java)
+
+        for(columnConfig in entityConfig.columns) {
+            val createColumnConfigMethodName = "create" + (columnConfig.columnName.substring(0, 1).toUpperCase() + columnConfig.columnName.substring(1)) + "ColumnConfig"
+            addCreateColumnConfigMethod(createColumnConfigMethodName, columnConfigName, entityClassBuilder, columnConfig)
+
+            if(columnConfig.isId) {
+                constructorBuilder.addStatement("\$T idColumn = \$N()", columnConfigName, createColumnConfigMethodName)
+                constructorBuilder.addStatement("addColumn(idColumn)")
+                constructorBuilder.addStatement("setIdColumn(idColumn)")
+            }
+            else if(columnConfig.isVersion) {
+                constructorBuilder.addStatement("\$T versionColumn = \$N()", columnConfigName, createColumnConfigMethodName)
+                constructorBuilder.addStatement("addColumn(versionColumn)")
+                constructorBuilder.addStatement("setVersionColumn(versionColumn)")
+            }
+            else {
+                constructorBuilder.addStatement("addColumn(\$N())", createColumnConfigMethodName)
+            }
+        }
+    }
+
+    private fun addCreateColumnConfigMethod(createColumnConfigMethodName: String, columnConfigName: ClassName, entityClassBuilder: TypeSpec.Builder, columnConfig: ColumnConfig) {
+        val property = columnConfig.property
+        val createGetterStatement = if(property.getter == null) {
+            "null"
+        }
+        else {
+            "this.getEntityClass().getDeclaredMethod(\"" + property.getter?.name + "\")"
+        }
+        val createSetterStatement = if(property.setter == null) {
+            "null"
+        }
+        else {
+            "this.getEntityClass().getDeclaredMethod(\"" + property.setter?.name + "\")"
+        }
+
+        val createColumnConfigMethodBuilder = MethodSpec.methodBuilder(createColumnConfigMethodName)
+                .addException(ReflectiveOperationException::class.java)
+                .returns(ColumnConfig::class.java)
+                .addStatement("\$T column = new \$T(this, new \$T(this.getEntityClass().getDeclaredField(\$S), \$L, \$L))", columnConfigName, columnConfigName,
+                        ClassName.get(Property::class.java), property.field.name, createGetterStatement, createSetterStatement)
+                .addStatement("column.setColumnName(\$S)", columnConfig.columnName)
+                .addStatement("column.setTableName(\$S)", columnConfig.tableName)
+
+                .addStatement("column.setDataType(" + if(columnConfig.dataType == null) "null)" else "\$T.\$L)", ClassName.get(DataType::class.java), columnConfig.dataType)
+
+                .addStatement("column.setId(\$L)", columnConfig.isId)
+                .addStatement("column.setGeneratedId(\$L)", columnConfig.isGeneratedId)
+                .addStatement("column.setGeneratedIdType(\$T.\$L)", ClassName.get(GenerationType::class.java), columnConfig.generatedIdType)
+                .addStatement("column.setIdGenerator(\$S)", columnConfig.idGenerator)
+                .addStatement("column.setGeneratedIdSequence(\$S)", columnConfig.generatedIdSequence)
+
+                .addStatement("column.setVersion(\$L)", columnConfig.isVersion)
+                .addStatement("column.setLob(\$L)", columnConfig.isLob)
+
+                .addStatement("column.setColumnDefinition(\$S)", columnConfig.columnDefinition)
+                .addStatement("column.setLength(\$L)", columnConfig.length)
+                .addStatement("column.setScale(\$L)", columnConfig.scale)
+                .addStatement("column.setPrecision(\$L)", columnConfig.precision)
+
+                .addStatement("column.setCanBeNull(\$L)", columnConfig.canBeNull)
+                .addStatement("column.setUnique(\$L)", columnConfig.unique)
+                .addStatement("column.setInsertable(\$L)", columnConfig.insertable)
+                .addStatement("column.setUpdatable(\$L)", columnConfig.updatable)
+                .addStatement("column.setFetch(\$T.\$L)", ClassName.get(FetchType::class.java), columnConfig.fetch)
+
+                .addStatement("column.setRelationType(\$T.\$L)", ClassName.get(RelationType::class.java), columnConfig.relationType)
+
+                .addStatement("return column")
+
+        entityClassBuilder.addMethod(createColumnConfigMethodBuilder.build())
     }
 
 
