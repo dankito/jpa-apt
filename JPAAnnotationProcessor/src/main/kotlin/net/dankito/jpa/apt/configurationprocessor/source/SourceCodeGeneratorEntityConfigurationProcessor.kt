@@ -57,6 +57,7 @@ class SourceCodeGeneratorEntityConfigurationProcessor : IEntityConfigurationProc
 
     private fun createEntityConfigClassesLoader(createdEntityConfigs: List<ClassName>, processingEnv: ProcessingEnvironment) {
         val className = "GeneratedEntityConfigs"
+        val packageName = "net.dankito.jpa.apt.generated"
 
         val entityConfig = ClassName.get(EntityConfig::class.java)
         val list = ClassName.get("java.util", "List")
@@ -83,7 +84,7 @@ class SourceCodeGeneratorEntityConfigurationProcessor : IEntityConfigurationProc
                 .addMethod(getGeneratedEntityConfigs)
                 .build()
 
-        val javaFile = JavaFile.builder("", entityClass)
+        val javaFile = JavaFile.builder(packageName, entityClass)
                 .build()
 
         javaFile.writeTo(processingEnv.filer)
