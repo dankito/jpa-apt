@@ -1,10 +1,11 @@
-package net.dankito.jpa.apt.test_entities.class_annotations;
+package net.dankito.jpa.apt.test_entities.inheritance_annotations;
 
 import javax.persistence.Entity;
 import javax.persistence.Id;
 
+
 @Entity
-public class EntityAnnotationNameUnset {
+public class EntityWithoutSuperclass {
 
     @Id
     private String id;
