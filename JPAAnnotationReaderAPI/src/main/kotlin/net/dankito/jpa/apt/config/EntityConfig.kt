@@ -175,19 +175,19 @@ open class EntityConfig(val entityClass: Class<*>, val constructor: Constructor<
         }
     }
 
-    fun setVersionColumnAndSetItOnChildEntities(versionColumn: ColumnConfig) {
+    fun setVersionColumnAndSetItOnChildEntities(versionColumn: ColumnConfig?) {
         this.versionColumn = versionColumn
 
         setVersionColumnOnChildEntitiesRecursively(versionColumn)
     }
 
-    private fun setVersionColumnOnChildEntitiesRecursively(versionColumn: ColumnConfig) {
+    private fun setVersionColumnOnChildEntitiesRecursively(versionColumn: ColumnConfig?) {
         for(childEntity in childEntities) {
             setVersionColumnOnChildEntitiesRecursively(childEntity, versionColumn)
         }
     }
 
-    private fun setVersionColumnOnChildEntitiesRecursively(childEntity: EntityConfig, versionColumn: ColumnConfig) {
+    private fun setVersionColumnOnChildEntitiesRecursively(childEntity: EntityConfig, versionColumn: ColumnConfig?) {
         childEntity.versionColumn = versionColumn
 
         for(subChild in childEntity.childEntities) {
