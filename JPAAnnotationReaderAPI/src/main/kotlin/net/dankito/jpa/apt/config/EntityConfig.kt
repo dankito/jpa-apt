@@ -14,7 +14,12 @@ import kotlin.collections.ArrayList
         property = "entityClass")
 open class EntityConfig(val entityClass: Class<*>, val constructor: Constructor<*>) {
 
-    internal constructor() : this(Any::class.java, Any::class.java.declaredConstructors[0]) { // for Jackson
+    /**
+     * As we currently only support no-arg constructors, this convenience constructor automatically gets no-arg constructor from passed class
+     */
+    constructor(entityClass: Class<*>) : this(entityClass, entityClass.getDeclaredConstructor())
+
+    internal constructor() : this(Any::class.java) { // for Jackson
 
     }
 
