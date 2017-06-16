@@ -75,6 +75,11 @@ open class ColumnConfig(val entityConfig: EntityConfig, val property: Property) 
     }
 
 
+    fun isLazyLoading(): Boolean {
+        return fetch == FetchType.LAZY
+    }
+
+
     override fun toString(): String {
         return columnName + " on " + entityConfig
     }
