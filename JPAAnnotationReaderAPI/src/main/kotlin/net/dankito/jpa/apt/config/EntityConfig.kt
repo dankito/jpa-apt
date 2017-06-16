@@ -229,6 +229,14 @@ open class EntityConfig(val entityClass: Class<*>, val constructor: Constructor<
     }
 
 
+    fun isVersionColumnSet(): Boolean {
+        return versionColumn != null
+    }
+
+    fun hasParentEntity(): Boolean {
+        return parentEntity != null
+    }
+
 
     fun getColumnsIncludingInheritedOnes(): Collection<ColumnConfig> {
         if(areInheritedColumnsLoaded == false) {
