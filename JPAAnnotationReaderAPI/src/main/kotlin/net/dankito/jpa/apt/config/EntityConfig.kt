@@ -100,30 +100,44 @@ open class EntityConfig(val entityClass: Class<*>, val constructor: Constructor<
 
     fun invokePrePersistLifeCycleMethod(data: Any) {
         invokeMethods(prePersistLifeCycleMethods, data)
+
+        parentEntity?.invokePrePersistLifeCycleMethod(data)
     }
 
     fun invokePostPersistLifeCycleMethod(data: Any) {
         invokeMethods(postPersistLifeCycleMethods, data)
+
+        parentEntity?.invokePostPersistLifeCycleMethod(data)
     }
 
     fun invokePostLoadLifeCycleMethod(data: Any) {
         invokeMethods(postLoadLifeCycleMethods, data)
+
+        parentEntity?.invokePostLoadLifeCycleMethod(data)
     }
 
     fun invokePreUpdateLifeCycleMethod(data: Any) {
         invokeMethods(preUpdateLifeCycleMethods, data)
+
+        parentEntity?.invokePreUpdateLifeCycleMethod(data)
     }
 
     fun invokePostUpdateLifeCycleMethod(data: Any) {
         invokeMethods(postUpdateLifeCycleMethods, data)
+
+        parentEntity?.invokePostUpdateLifeCycleMethod(data)
     }
 
     fun invokePreRemoveLifeCycleMethod(data: Any) {
         invokeMethods(preRemoveLifeCycleMethods, data)
+
+        parentEntity?.invokePreRemoveLifeCycleMethod(data)
     }
 
     fun invokePostRemoveLifeCycleMethod(data: Any) {
         invokeMethods(postRemoveLifeCycleMethods, data)
+
+        parentEntity?.invokePostRemoveLifeCycleMethod(data)
     }
 
     private fun invokeMethods(methods: List<Method>, data: Any) {
