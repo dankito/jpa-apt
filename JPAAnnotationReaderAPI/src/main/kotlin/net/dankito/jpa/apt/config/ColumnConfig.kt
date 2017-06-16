@@ -9,7 +9,7 @@ import javax.persistence.GenerationType
 
 @JsonIdentityInfo(
         generator = ObjectIdGenerators.UUIDGenerator::class)
-class ColumnConfig(val entityConfig: EntityConfig, val property: Property) {
+open class ColumnConfig(val entityConfig: EntityConfig, val property: Property) {
 
     private constructor() : this(EntityConfig(), Property()) // for Jackson
 
