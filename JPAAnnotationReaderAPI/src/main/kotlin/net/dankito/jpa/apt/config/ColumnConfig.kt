@@ -55,11 +55,6 @@ open class ColumnConfig(val entityConfig: EntityConfig, val property: Property) 
     var isJoinColumn = false
 
     var cascade = arrayOfNulls<CascadeType>(0)
-    var cascadePersist: Boolean? = null
-    var cascadeRefresh: Boolean? = null
-    var cascadeMerge: Boolean? = null
-    var cascadeDetach: Boolean? = null
-    var cascadeRemove: Boolean? = null
 
 
     fun isRelationshipColumn(): Boolean {
