@@ -15,7 +15,7 @@ class ColumnConfigurationReader(private var relationColumnConfigurationReader: R
                                 private var reflectionHelper: ReflectionHelper = ReflectionHelper()) {
 
     fun readEntityColumns(context: AnnotationProcessingContext) {
-        for(entityConfig in context.getEntityConfigs()) {
+        for(entityConfig in context.getEntityConfigsInOrderAdded()) {
             readEntityColumns(entityConfig, context)
         }
     }

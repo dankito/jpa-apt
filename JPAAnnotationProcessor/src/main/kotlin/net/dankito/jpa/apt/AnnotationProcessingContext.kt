@@ -17,6 +17,8 @@ class AnnotationProcessingContext(val roundEnv: RoundEnvironment, val processing
 
     private val entityConfigRegistry = HashMap<Class<*>, EntityConfig>()
 
+    private val entityConfigsInOrderAdded = ArrayList<EntityConfig>()
+
     private val propertyRegistry = HashMap<Field, Property>()
 
     private val columnRegistry = HashMap<Property, ColumnConfig>()
@@ -87,6 +89,7 @@ class AnnotationProcessingContext(val roundEnv: RoundEnvironment, val processing
 
 
     fun registerEntityConfig(entityConfig: EntityConfig) {
+        entityConfigsInOrderAdded.add(entityConfig)
         entityConfigRegistry.put(entityConfig.entityClass, entityConfig)
     }
 
@@ -94,8 +97,8 @@ class AnnotationProcessingContext(val roundEnv: RoundEnvironment, val processing
         return entityConfigRegistry[entityClass]
     }
 
-    fun getEntityConfigs() : List<EntityConfig> {
-        return entityConfigRegistry.values.toList()
+    fun getEntityConfigsInOrderAdded() : List<EntityConfig> {
+        return entityConfigsInOrderAdded
     }
 
     fun registerProperty(property: Property) {
