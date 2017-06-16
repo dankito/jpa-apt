@@ -14,7 +14,7 @@ class SourceCodeGeneratorContext(entityConfiguration: JPAEntityConfiguration) {
     init {
         entityConfigsOrderedHierarchically.addAll(entityConfiguration.entities.filter { it.parentEntity == null })
 
-        addChildrenRecursively(entityConfigsOrderedHierarchically, entityConfigsOrderedHierarchically)
+        addChildrenRecursively(entityConfigsOrderedHierarchically, entityConfigsOrderedHierarchically.toList() /* make a copy */)
     }
 
     private fun addChildrenRecursively(sortedList: LinkedHashSet<EntityConfig>, entityConfigsFromLastRound: Collection<EntityConfig>) {
