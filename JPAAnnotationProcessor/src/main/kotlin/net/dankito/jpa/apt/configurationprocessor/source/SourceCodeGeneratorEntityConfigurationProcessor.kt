@@ -45,7 +45,10 @@ class SourceCodeGeneratorEntityConfigurationProcessor : IEntityConfigurationProc
                 .addStatement("setIdColumnAndSetItOnChildEntities(\$N.getIdColumn())", "parentEntity")
                 .addStatement("setVersionColumnAndSetItOnChildEntities(\$N.getVersionColumn())", "parentEntity")
                 .endControlFlow()
-                .addStatement("this.\$N = \$S", "tableName", entityConfig.tableName)
+                .addStatement("this.setTableName(\$S)", entityConfig.tableName)
+
+                .addStatement("this.setCatalogName(\$S)", entityConfig.catalogName)
+                .addStatement("this.setSchemaName(\$S)", entityConfig.schemaName)
 
         if(entityConfig.access == null) {
             constructorBuilder.addStatement("this.setAccess(null)")
@@ -55,6 +58,8 @@ class SourceCodeGeneratorEntityConfigurationProcessor : IEntityConfigurationProc
         }
 
         addColumnConfigs(entityClassBuilder, constructorBuilder, entityConfig)
+
+        addLifeCycleMethods(entityClassBuilder, constructorBuilder, entityConfig)
 
         val constructor = constructorBuilder.build()
 
@@ -147,6 +152,40 @@ class SourceCodeGeneratorEntityConfigurationProcessor : IEntityConfigurationProc
                 .addStatement("return column")
 
         entityClassBuilder.addMethod(createColumnConfigMethodBuilder.build())
+    }
+
+    private fun addLifeCycleMethods(entityClassBuilder: TypeSpec.Builder, constructorBuilder: MethodSpec.Builder, entityConfig: EntityConfig) {
+        val addLifeCycleMethodsBuilder = MethodSpec.methodBuilder("addLifeCycleMethods")
+                .addException(NoSuchMethodException::class.java)
+
+        entityConfig.prePersistLifeCycleMethods.forEach {
+            addLifeCycleMethodsBuilder.addStatement("addPrePersistLifeCycleMethod(this.getEntityClass().getDeclaredMethod(\"" + it.name + "\"))")
+        }
+        entityConfig.postPersistLifeCycleMethods.forEach {
+            addLifeCycleMethodsBuilder.addStatement("addPostPersistLifeCycleMethod(this.getEntityClass().getDeclaredMethod(\"" + it.name + "\"))")
+        }
+
+        entityConfig.postLoadLifeCycleMethods.forEach {
+            addLifeCycleMethodsBuilder.addStatement("addPostLoadLifeCycleMethod(this.getEntityClass().getDeclaredMethod(\"" + it.name + "\"))")
+        }
+
+        entityConfig.preUpdateLifeCycleMethods.forEach {
+            addLifeCycleMethodsBuilder.addStatement("addPreUpdateLifeCycleMethod(this.getEntityClass().getDeclaredMethod(\"" + it.name + "\"))")
+        }
+        entityConfig.postUpdateLifeCycleMethods.forEach {
+            addLifeCycleMethodsBuilder.addStatement("addPostUpdateLifeCycleMethod(this.getEntityClass().getDeclaredMethod(\"" + it.name + "\"))")
+        }
+
+        entityConfig.preRemoveLifeCycleMethods.forEach {
+            addLifeCycleMethodsBuilder.addStatement("addPreRemoveLifeCycleMethod(this.getEntityClass().getDeclaredMethod(\"" + it.name + "\"))")
+        }
+        entityConfig.postRemoveLifeCycleMethods.forEach {
+            addLifeCycleMethodsBuilder.addStatement("addPostRemoveLifeCycleMethod(this.getEntityClass().getDeclaredMethod(\"" + it.name + "\"))")
+        }
+
+        entityClassBuilder.addMethod(addLifeCycleMethodsBuilder.build())
+
+        constructorBuilder.addStatement("addLifeCycleMethods()")
     }
 
 
