@@ -42,6 +42,8 @@ class SourceCodeGeneratorEntityConfigurationProcessor : IEntityConfigurationProc
                 .addStatement("super(\$T.class)", entityClassName)
                 .beginControlFlow("if(\$N != null)", "parentEntity")
                 .addStatement("\$N.addChildEntityConfig(this)", "parentEntity")
+                .addStatement("setIdColumnAndSetItOnChildEntities(\$N.getIdColumn())", "parentEntity")
+                .addStatement("setVersionColumnAndSetItOnChildEntities(\$N.getVersionColumn())", "parentEntity")
                 .endControlFlow()
                 .addStatement("this.\$N = \$S", "tableName", entityConfig.tableName)
 
@@ -78,12 +80,12 @@ class SourceCodeGeneratorEntityConfigurationProcessor : IEntityConfigurationProc
             if(columnConfig.isId) {
                 constructorBuilder.addStatement("\$T idColumn = \$N()", columnConfigName, createColumnConfigMethodName)
                 constructorBuilder.addStatement("addColumn(idColumn)")
-                constructorBuilder.addStatement("setIdColumn(idColumn)")
+                constructorBuilder.addStatement("setIdColumnAndSetItOnChildEntities(idColumn)")
             }
             else if(columnConfig.isVersion) {
                 constructorBuilder.addStatement("\$T versionColumn = \$N()", columnConfigName, createColumnConfigMethodName)
                 constructorBuilder.addStatement("addColumn(versionColumn)")
-                constructorBuilder.addStatement("setVersionColumn(versionColumn)")
+                constructorBuilder.addStatement("setVersionColumnAndSetItOnChildEntities(versionColumn)")
             }
             else {
                 constructorBuilder.addStatement("addColumn(\$N())", createColumnConfigMethodName)
