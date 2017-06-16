@@ -2,6 +2,7 @@ package net.dankito.jpa.apt
 
 import net.dankito.jpa.apt.config.JPAEntityConfiguration
 import net.dankito.jpa.apt.configurationprocessor.json.JsonEntityConfigurationProcessor
+import net.dankito.jpa.apt.configurationprocessor.source.SourceCodeGeneratorEntityConfigurationProcessor
 import javax.annotation.processing.AbstractProcessor
 import javax.annotation.processing.RoundEnvironment
 import javax.annotation.processing.SupportedAnnotationTypes
@@ -51,6 +52,8 @@ class JPAAnnotationProcessor : AbstractProcessor() {
         ColumnConfigurationReader().readEntityColumns(context)
 
         val entityConfiguration = createResult(context)
+
+        SourceCodeGeneratorEntityConfigurationProcessor().processConfiguration(entityConfiguration, processingEnv)
 
         JsonEntityConfigurationProcessor().processConfiguration(entityConfiguration, processingEnv)
     }
