@@ -93,7 +93,7 @@ class ReflectionHelper {
         val fieldName = getFieldNameWithFirstLetterUpperCase(field)
 
         methodsMap["set" + fieldName]?.let { setMethod ->
-            if(setMethod.returnType == Void::class.java && setMethod.parameterCount == 1 && setMethod.parameterTypes[0] == field.type) {
+            if(setMethod.returnType == Void.TYPE && setMethod.parameterCount == 1 && setMethod.parameterTypes[0] == field.type) {
                 return setMethod
             }
         }
