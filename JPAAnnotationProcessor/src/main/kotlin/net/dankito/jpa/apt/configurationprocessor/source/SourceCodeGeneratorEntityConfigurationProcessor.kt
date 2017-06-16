@@ -40,7 +40,9 @@ class SourceCodeGeneratorEntityConfigurationProcessor : IEntityConfigurationProc
                 .addException(Exception::class.java)
                 .addParameter(EntityConfig::class.java, "parentEntity")
                 .addStatement("super(\$T.class)", entityClassName)
-                .addStatement("setParentEntity(\$N)", "parentEntity")
+                .beginControlFlow("if(\$N != null)", "parentEntity")
+                .addStatement("\$N.addChildEntityConfig(this)", "parentEntity")
+                .endControlFlow()
                 .addStatement("this.\$N = \$S", "tableName", entityConfig.tableName)
 
         if(entityConfig.access == null) {
