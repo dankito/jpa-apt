@@ -3,6 +3,7 @@ package net.dankito.jpa.apt.configurationprocessor.source
 import com.squareup.javapoet.*
 import net.dankito.jpa.apt.config.*
 import net.dankito.jpa.apt.configurationprocessor.IEntityConfigurationProcessor
+import net.dankito.jpa.apt.reflection.ReflectionHelper
 import java.lang.Exception
 import javax.annotation.processing.ProcessingEnvironment
 import javax.lang.model.element.Modifier
@@ -35,12 +36,15 @@ class SourceCodeGeneratorEntityConfigurationProcessor : IEntityConfigurationProc
         val entityClassBuilder = TypeSpec.classBuilder(className)
                 .superclass(EntityConfig::class.java)
                 .addModifiers(Modifier.PUBLIC, Modifier.FINAL)
+                .addField(ReflectionHelper::class.java, "reflectionHelper", Modifier.PRIVATE)
 
         val constructorBuilder = MethodSpec.constructorBuilder()
                 .addModifiers(Modifier.PUBLIC)
                 .addException(Exception::class.java)
                 .addParameter(EntityConfig::class.java, "parentEntity")
                 .addStatement("super(\$T.class)", entityClassName)
+                .addStatement("reflectionHelper = new \$T()", ReflectionHelper::class.java)
+                .addStatement("reflectionHelper.makeAccessible(this.getConstructor())")
                 .beginControlFlow("if(\$N != null)", "parentEntity")
                 .addStatement("\$N.addChildEntityConfig(this)", "parentEntity")
                 .addStatement("setIdColumnAndSetItOnChildEntities(\$N.getIdColumn())", "parentEntity")
@@ -123,6 +127,7 @@ class SourceCodeGeneratorEntityConfigurationProcessor : IEntityConfigurationProc
                 .returns(ColumnConfig::class.java)
                 .addStatement("\$T column = new \$T(this, new \$T(this.getEntityClass().getDeclaredField(\$S), \$L, \$L))", columnConfigName, columnConfigName,
                         ClassName.get(Property::class.java), property.field.name, createGetterStatement, createSetterStatement)
+                .addStatement("reflectionHelper.makeAccessible(column.getProperty())")
                 .addStatement("column.setColumnName(\$S)", columnConfig.columnName)
                 .addStatement("column.setTableName(\$S)", columnConfig.tableName)
 
@@ -165,6 +170,8 @@ class SourceCodeGeneratorEntityConfigurationProcessor : IEntityConfigurationProc
     }
 
     private fun addLifeCycleMethods(entityClassBuilder: TypeSpec.Builder, constructorBuilder: MethodSpec.Builder, entityConfig: EntityConfig) {
+        // TODO: make life cycle methods accessible
+
         val addLifeCycleMethodsBuilder = MethodSpec.methodBuilder("addLifeCycleMethods")
                 .addException(NoSuchMethodException::class.java)
 
