@@ -226,16 +226,13 @@ class SourceCodeGeneratorEntityConfigurationProcessor : IEntityConfigurationProc
             val parentEntity = entityConfig.parentEntity
             val parentEntityVariableName = if(parentEntity == null) "null" else getEntityConfigVariableName(context.getClassName(parentEntity))
 
-            if(entityConfig.childEntities.size == 0) {
-                getGeneratedEntityConfigsBuilder.addStatement("result.add(new \$T(\$N))", className, parentEntityVariableName)
-            }
-            else {
-                val variableName = getEntityConfigVariableName(className)
-                getGeneratedEntityConfigsBuilder.addStatement("\$T \$N = new \$T(\$N)", className, variableName, className, parentEntityVariableName)
-                getGeneratedEntityConfigsBuilder.addStatement("result.add(\$N)", variableName)
-            }
+            val variableName = getEntityConfigVariableName(className)
+            addNewLine(getGeneratedEntityConfigsBuilder)
+            getGeneratedEntityConfigsBuilder.addStatement("\$T \$N = new \$T(\$N)", className, variableName, className, parentEntityVariableName)
+            getGeneratedEntityConfigsBuilder.addStatement("result.add(\$N)", variableName)
         }
 
+        addNewLine(getGeneratedEntityConfigsBuilder)
         getGeneratedEntityConfigsBuilder.addStatement("return result")
 
         val getGeneratedEntityConfigs = getGeneratedEntityConfigsBuilder.build()
@@ -259,6 +256,10 @@ class SourceCodeGeneratorEntityConfigurationProcessor : IEntityConfigurationProc
         }
 
         return "null"
+    }
+
+    private fun addNewLine(methodBuilder: MethodSpec.Builder) {
+        methodBuilder.addCode(System.lineSeparator())
     }
 
 }
