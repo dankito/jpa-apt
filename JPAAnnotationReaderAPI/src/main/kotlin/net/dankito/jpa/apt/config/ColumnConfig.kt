@@ -61,6 +61,7 @@ open class ColumnConfig(val entityConfig: EntityConfig, val property: Property) 
         return type.isEnum
     }
 
+
     fun isRelationshipColumn(): Boolean {
         return relationType != RelationType.None
     }
@@ -76,6 +77,10 @@ open class ColumnConfig(val entityConfig: EntityConfig, val property: Property) 
 
     fun isLazyLoading(): Boolean {
         return fetch == FetchType.LAZY
+    }
+
+    fun hasOrderColumns(): Boolean {
+        return false
     }
 
 
