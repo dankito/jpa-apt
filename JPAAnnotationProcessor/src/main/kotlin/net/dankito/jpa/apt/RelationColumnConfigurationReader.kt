@@ -50,7 +50,7 @@ class RelationColumnConfigurationReader {
         column.fetch = oneToOne.fetch
         if (column.fetch == FetchType.LAZY) {
             context.processingEnv.messager.printMessage(Diagnostic.Kind.WARNING, "FetchType.LAZY as for $column is not supported for @OneToOne relationships as this would " +
-                    "require Proxy Generation or Byte code manipulation like with JavaAssist,  which is not supported on Android. " +
+                    "require Proxy Generation or Byte code manipulation like with JavaAssist,  which is not supported on Android.\n" +
                     "As LAZY is per JPA specification only a hint, it will be in this case silently ignored and Fetch set to  EAGER.")
         }
 
@@ -68,7 +68,26 @@ class RelationColumnConfigurationReader {
 
 
     private fun readManyToOneConfiguration(column: ColumnConfig, element: Element, manyToOne: ManyToOne, context: AnnotationProcessingContext) {
+        column.relationType = RelationType.ManyToOne
 
+        readJoinColumnConfiguration(column, element)
+
+        val targetEntityAnnotationValue = getClassFromAnnotationValue(manyToOne)
+        column.targetEntity = getTargetEntityConfig(column, targetEntityAnnotationValue, context)
+
+        column.cascade = manyToOne.cascade.filterNotNull().toTypedArray()
+
+        column.fetch = manyToOne.fetch
+        if (column.fetch == FetchType.LAZY) {
+            context.processingEnv.messager.printMessage(Diagnostic.Kind.WARNING, "FetchType.LAZY as for $column is not supported for @ManyToOne relationships as this would " +
+                    "require Proxy Generation or Byte code manipulation like with JavaAssist, which is not supported on Android.\n" +
+                    "As LAZY is per JPA specification only a hint, it will be in this case silently ignored and Fetch set to  EAGER.")
+        }
+
+        // TODO: what's the difference between JoinColumn.nullable() and ManyToOne.optional() ?
+        if(manyToOne.optional == false) { // don't overwrite a may previously set value by JoinColumn; true is the default value for optional
+            column.canBeNull = manyToOne.optional
+        }
     }
 
 
