@@ -52,7 +52,6 @@ class EntityConfigurationReader(private val reflectionHelper: ReflectionHelper =
 
         if (inheritanceStrategy == null) {
             val constructor = reflectionHelper.findNoArgConstructor(entityClass)
-            reflectionHelper.makeAccessible(constructor)
             entityConfig = EntityConfig(entityClass, constructor)
             entityConfig.classHierarchy = getClassHierarchy(entityClass)
         }
