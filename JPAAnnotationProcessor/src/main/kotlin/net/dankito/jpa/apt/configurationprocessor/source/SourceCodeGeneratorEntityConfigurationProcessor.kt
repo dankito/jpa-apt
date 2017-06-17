@@ -52,8 +52,6 @@ class SourceCodeGeneratorEntityConfigurationProcessor : IEntityConfigurationProc
 
                 .beginControlFlow("if(\$N != null)", "parentEntity")
                 .addStatement("\$N.addChildEntityConfig(this)", "parentEntity")
-                .addStatement("setIdColumnAndSetItOnChildEntities(\$N.getIdColumn())", "parentEntity")
-                .addStatement("setVersionColumnAndSetItOnChildEntities(\$N.getVersionColumn())", "parentEntity")
                 .endControlFlow()
                 .addCode(System.lineSeparator())
 
