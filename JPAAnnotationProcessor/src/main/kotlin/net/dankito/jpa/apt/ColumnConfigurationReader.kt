@@ -6,9 +6,11 @@ import net.dankito.jpa.apt.config.EntityConfig
 import net.dankito.jpa.apt.config.Property
 import net.dankito.jpa.apt.reflection.ReflectionHelper
 import java.sql.SQLException
+import java.util.*
 import javax.lang.model.element.Element
 import javax.lang.model.element.ElementKind
 import javax.persistence.*
+import javax.tools.Diagnostic
 
 
 class ColumnConfigurationReader(private var relationColumnConfigurationReader: RelationColumnConfigurationReader = RelationColumnConfigurationReader(),
@@ -61,15 +63,111 @@ class ColumnConfigurationReader(private var relationColumnConfigurationReader: R
     }
 
     private fun readColumnConfiguration(column: ColumnConfig, element: Element, context: AnnotationProcessingContext) {
+        readDataType(column, element, context)
+
         readIdConfiguration(column, element)
         readVersionConfiguration(column, element)
 
-        readLobAnnotation(column, element)
         readBasicAnnotation(column, element)
         readColumnAnnotation(column, element)
 
         readRelationConfiguration(column, element, context)
     }
+
+
+    @Throws(SQLException::class)
+    private fun readDataType(column: ColumnConfig, element: Element, context: AnnotationProcessingContext) {
+        if(column.type == Date::class.java || column.type == Calendar::class.java) { // TODO: what about java.sql.Date (or Timestamp)?
+            readDateOrCalenderDataType(column, element, context)
+        }
+        else if (column.type.isEnum) {
+            readEnumDataType(column, element)
+        }
+        else if(element.getAnnotation(Lob::class.java) != null) {
+            readLobAnnotation(column, element)
+        }
+        else if (isCollectionClass(column.type)) {
+            // TODO
+//            val collectionGenericClass = property.getGenericType()
+//            if (configRegistry.isAnEntityWhichConfigurationShouldBeRead(collectionGenericClass) == false) {
+//                throwEntityIsNotConfiguredToBeReadException(collectionGenericClass, property)
+//            }
+        }
+        else {
+            // TODO
+//            for (dataType in DataType.values()) {
+//                if(property.getType() == dataType.getType()) {
+//                    column.dataType = dataType
+//                    return
+//                }
+//            }
+
+//            if (isAnnotationPresent(property, OneToOne::class.java) == false && isAnnotationPresent(property, ManyToOne::class.java) == false &&
+//                    isAnnotationPresent(property, OneToMany::class.java) == false && isAnnotationPresent(property, ManyToMany::class.java) == false) {
+//                throw SQLException("Don't know how to serialize Type of Property " + property + ". If it's a relationship, did you forget to set appropriate Annotation (@OneToOne, " +
+//                        "@OneToMany, ...) on its field or get method?")
+//            }
+        }
+    }
+
+    @Throws(SQLException::class)
+    private fun readDateOrCalenderDataType(column: ColumnConfig, element: Element, context: AnnotationProcessingContext) {
+        val temporal = element.getAnnotation(Temporal::class.java)
+
+        if (temporal == null) {
+            context.processingEnv.messager.printMessage(Diagnostic.Kind.WARNING, "@Temporal not set on field $column.\n"
+                    + "According to JPA specification for data types java.util.Date and java.util.Calender @Temporal annotation " +
+                    "has to be set. Ignoring this java.sql.Timestamp is assumed for " + column.columnName)
+            column.dataType = DataType.DATE_TIMESTAMP
+        }
+        else {
+            when (temporal.value) {
+                TemporalType.DATE ->
+                    column.dataType = DataType.DATE
+                TemporalType.TIME ->
+                    column.dataType = DataType.DATE_TIMESTAMP
+                else ->
+                    column.dataType = DataType.DATE_TIMESTAMP
+            }
+        }
+    }
+
+    @Throws(SQLException::class)
+    private fun readEnumDataType(column: ColumnConfig, element: Element) {
+        element.getAnnotation(Enumerated::class.java)?.let { enumerated ->
+            if (enumerated.value == EnumType.STRING) {
+                column.dataType = DataType.ENUM_STRING
+                return
+            }
+        }
+
+        column.dataType = DataType.ENUM_INTEGER
+    }
+
+    private fun readLobAnnotation(column: ColumnConfig, element: Element) {
+        // TODO: configure Lob field; set settings according to p. 39/40
+        element.getAnnotation(Lob::class.java)?.let { lob ->
+            column.isLob = true
+
+            // A Lob may be either a binary or character type.
+            // The Lob type is inferred from the type of the persistent field or property, and except for string and character-based types defaults to Blob.
+
+            if (CharSequence::class.java.isAssignableFrom(column.type) || CharArray::class.java.isAssignableFrom(column.type) ||
+                    Array<Char>::class.java.isAssignableFrom(column.type)) {
+                column.dataType = DataType.STRING
+                column.columnDefinition = "longvarchar"
+            }
+            else {
+                column.dataType = DataType.BYTE_ARRAY
+                column.columnDefinition = "longvarbinary"
+            }
+        }
+    }
+
+    private fun isCollectionClass(clazz: Class<*>): Boolean {
+        return Collection::class.java.isAssignableFrom(clazz)
+    }
+
 
     private fun readIdConfiguration(column: ColumnConfig, element: Element) {
         element.getAnnotation(Id::class.java)?.let { id ->
@@ -134,25 +232,6 @@ class ColumnConfigurationReader(private var relationColumnConfigurationReader: R
         return Long::class.javaPrimitiveType == type || Long::class.java == type || Long::class.javaObjectType == type
                 || Int::class.javaPrimitiveType == type || Int::class.java == type || Int::class.javaObjectType == type
                 || Short::class.javaPrimitiveType == type || Short::class.java == type || Short::class.javaObjectType == type || java.sql.Timestamp::class.java == type
-    }
-
-    private fun readLobAnnotation(column: ColumnConfig, element: Element) {
-        element.getAnnotation(Lob::class.java)?.let { lob ->
-            column.isLob = true
-
-            // A Lob may be either a binary or character type.
-            // The Lob type is inferred from the type of the persistent field or property, and except for string and character-based types defaults to Blob.
-
-            if (CharSequence::class.java.isAssignableFrom(column.type) || CharArray::class.java.isAssignableFrom(column.type) ||
-                    Array<Char>::class.java.isAssignableFrom(column.type)) {
-                column.dataType = DataType.String
-                column.columnDefinition = "longvarchar"
-            }
-            else {
-                column.dataType = DataType.ByteArray
-                column.columnDefinition = "longvarbinary"
-            }
-        }
     }
 
     private fun readBasicAnnotation(column: ColumnConfig, element: Element) {
