@@ -12,6 +12,6 @@ public class OneToOne_Bidirectional_OwningSide {
     private String id;
 
     @OneToOne
-    private OneToOne_Unidirectional_InverseSide inverseSide;
+    private OneToOne_Bidirectional_InverseSide inverseSide;
 
 }

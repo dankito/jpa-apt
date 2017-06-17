@@ -27,7 +27,7 @@ class OneToOneAnnotationTest : AbstractProcessorTest() {
 
     @Test
     fun bidirectional() {
-        val classNames = listOf(PackageName + "OneToOne_Bidirectional_OwningSide.java", PackageName + "OneToOne_Unidirectional_InverseSide.java")
+        val classNames = listOf(PackageName + "OneToOne_Bidirectional_OwningSide.java", PackageName + "OneToOne_Bidirectional_InverseSide.java")
 
         process(classNames)
     }
