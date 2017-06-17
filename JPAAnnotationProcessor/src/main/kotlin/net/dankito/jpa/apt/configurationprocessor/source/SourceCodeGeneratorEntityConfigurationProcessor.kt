@@ -71,7 +71,7 @@ class SourceCodeGeneratorEntityConfigurationProcessor : IEntityConfigurationProc
 
         addNewLine(constructorBuilder)
 
-        addColumnConfigs(entityClassBuilder, constructorBuilder, entityConfig)
+        addCreateColumnConfigsMethod(entityClassBuilder, entityConfig)
 
         addLifeCycleMethods(entityClassBuilder, constructorBuilder, entityConfig)
 
@@ -89,27 +89,33 @@ class SourceCodeGeneratorEntityConfigurationProcessor : IEntityConfigurationProc
         context.addEntityConfig(ClassName.get(packageName, className), entityConfig)
     }
 
-    private fun addColumnConfigs(entityClassBuilder: TypeSpec.Builder, constructorBuilder: MethodSpec.Builder, entityConfig: EntityConfig) {
+    private fun addCreateColumnConfigsMethod(entityClassBuilder: TypeSpec.Builder, entityConfig: EntityConfig) {
         val columnConfigName = ClassName.get(ColumnConfig::class.java)
+
+        val createColumnConfigsBuilder = MethodSpec.methodBuilder("createColumnConfigs")
+                .addModifiers(Modifier.PUBLIC)
+                .addException(Exception::class.java)
 
         for(columnConfig in entityConfig.columns) {
             val createColumnConfigMethodName = "create" + (columnConfig.columnName.substring(0, 1).toUpperCase() + columnConfig.columnName.substring(1)) + "ColumnConfig"
             addCreateColumnConfigMethod(createColumnConfigMethodName, columnConfigName, entityClassBuilder, columnConfig)
 
             if(columnConfig.isId) {
-                constructorBuilder.addStatement("\$T idColumn = \$N()", columnConfigName, createColumnConfigMethodName)
-                constructorBuilder.addStatement("addColumn(idColumn)")
-                constructorBuilder.addStatement("setIdColumnAndSetItOnChildEntities(idColumn)")
+                createColumnConfigsBuilder.addStatement("\$T idColumn = \$N()", columnConfigName, createColumnConfigMethodName)
+                createColumnConfigsBuilder.addStatement("addColumn(idColumn)")
+                createColumnConfigsBuilder.addStatement("setIdColumnAndSetItOnChildEntities(idColumn)")
             }
             else if(columnConfig.isVersion) {
-                constructorBuilder.addStatement("\$T versionColumn = \$N()", columnConfigName, createColumnConfigMethodName)
-                constructorBuilder.addStatement("addColumn(versionColumn)")
-                constructorBuilder.addStatement("setVersionColumnAndSetItOnChildEntities(versionColumn)")
+                createColumnConfigsBuilder.addStatement("\$T versionColumn = \$N()", columnConfigName, createColumnConfigMethodName)
+                createColumnConfigsBuilder.addStatement("addColumn(versionColumn)")
+                createColumnConfigsBuilder.addStatement("setVersionColumnAndSetItOnChildEntities(versionColumn)")
             }
             else {
-                constructorBuilder.addStatement("addColumn(\$N())", createColumnConfigMethodName)
+                createColumnConfigsBuilder.addStatement("addColumn(\$N())", createColumnConfigMethodName)
             }
         }
+
+        entityClassBuilder.addMethod(createColumnConfigsBuilder.build())
     }
 
     private fun addCreateColumnConfigMethod(createColumnConfigMethodName: String, columnConfigName: ClassName, entityClassBuilder: TypeSpec.Builder, columnConfig: ColumnConfig) {
@@ -251,6 +257,7 @@ class SourceCodeGeneratorEntityConfigurationProcessor : IEntityConfigurationProc
             val variableName = getEntityConfigVariableName(className)
             addNewLine(getGeneratedEntityConfigsBuilder)
             getGeneratedEntityConfigsBuilder.addStatement("\$T \$N = new \$T(\$N)", className, variableName, className, parentEntityVariableName)
+            getGeneratedEntityConfigsBuilder.addStatement("\$N.createColumnConfigs()", variableName)
             getGeneratedEntityConfigsBuilder.addStatement("result.add(\$N)", variableName)
         }
 
