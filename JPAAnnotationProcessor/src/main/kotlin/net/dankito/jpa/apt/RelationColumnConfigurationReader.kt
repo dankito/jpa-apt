@@ -46,6 +46,7 @@ class RelationColumnConfigurationReader {
         targetEntityAnnotationValue?.let { targetEntityAnnotationValue -> // should actually never be null
             column.targetEntity = getTargetEntityConfig(column, targetEntityAnnotationValue, context)
         }
+        // TODO: if targetEntity on annotation is not set, get targetEntity from type
 
         column.cascade = oneToOne.cascade.filterNotNull().toTypedArray()
 
@@ -167,7 +168,12 @@ class RelationColumnConfigurationReader {
             oneToOne.targetEntity // this should throw
         } catch (mte: MirroredTypeException) {
             try {
-                return Class.forName(mte.typeMirror.toString())
+                val type = mte.typeMirror.toString()
+                if(type == "void") { // targetEntity value not set
+                    return null
+                }
+
+                return Class.forName(type)
             } catch(getClassFromTypeMirrorException: Exception) {
                 log.error("Could not get Class from TypeMirror ${mte.typeMirror}")
             }
@@ -183,7 +189,12 @@ class RelationColumnConfigurationReader {
             manyToOne.targetEntity // this should throw
         } catch (mte: MirroredTypeException) {
             try {
-                return Class.forName(mte.typeMirror.toString())
+                val type = mte.typeMirror.toString()
+                if(type == "void") { // targetEntity value not set
+                    return null
+                }
+
+                return Class.forName(type)
             } catch(getClassFromTypeMirrorException: Exception) {
                 log.error("Could not get Class from TypeMirror ${mte.typeMirror}")
             }
@@ -199,7 +210,12 @@ class RelationColumnConfigurationReader {
             oneToMany.targetEntity // this should throw
         } catch (mte: MirroredTypeException) {
             try {
-                return Class.forName(mte.typeMirror.toString())
+                val type = mte.typeMirror.toString()
+                if(type == "void") { // targetEntity value not set
+                    return null
+                }
+
+                return Class.forName(type)
             } catch(getClassFromTypeMirrorException: Exception) {
                 log.error("Could not get Class from TypeMirror ${mte.typeMirror}")
             }
@@ -215,7 +231,12 @@ class RelationColumnConfigurationReader {
             manyToMany.targetEntity // this should throw
         } catch (mte: MirroredTypeException) {
             try {
-                return Class.forName(mte.typeMirror.toString())
+                val type = mte.typeMirror.toString()
+                if(type == "void") { // targetEntity value not set
+                    return null
+                }
+
+                return Class.forName(type)
             } catch(getClassFromTypeMirrorException: Exception) {
                 log.error("Could not get Class from TypeMirror ${mte.typeMirror}")
             }
