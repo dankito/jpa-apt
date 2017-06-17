@@ -42,14 +42,21 @@ class SourceCodeGeneratorEntityConfigurationProcessor : IEntityConfigurationProc
                 .addModifiers(Modifier.PUBLIC)
                 .addException(Exception::class.java)
                 .addParameter(EntityConfig::class.java, "parentEntity")
+
                 .addStatement("super(\$T.class)", entityClassName)
+                .addCode(System.lineSeparator())
+
                 .addStatement("reflectionHelper = new \$T()", ReflectionHelper::class.java)
                 .addStatement("reflectionHelper.makeAccessible(this.getConstructor())")
+                .addCode(System.lineSeparator())
+
                 .beginControlFlow("if(\$N != null)", "parentEntity")
                 .addStatement("\$N.addChildEntityConfig(this)", "parentEntity")
                 .addStatement("setIdColumnAndSetItOnChildEntities(\$N.getIdColumn())", "parentEntity")
                 .addStatement("setVersionColumnAndSetItOnChildEntities(\$N.getVersionColumn())", "parentEntity")
                 .endControlFlow()
+                .addCode(System.lineSeparator())
+
                 .addStatement("this.setTableName(\$S)", entityConfig.tableName)
 
                 .addStatement("this.setCatalogName(\$S)", entityConfig.catalogName)
@@ -61,6 +68,8 @@ class SourceCodeGeneratorEntityConfigurationProcessor : IEntityConfigurationProc
         else {
             constructorBuilder.addStatement("this.setAccess(\$T.\$L)", ClassName.get(AccessType::class.java), entityConfig.access.toString())
         }
+
+        addNewLine(constructorBuilder)
 
         addColumnConfigs(entityClassBuilder, constructorBuilder, entityConfig)
 
@@ -123,46 +132,58 @@ class SourceCodeGeneratorEntityConfigurationProcessor : IEntityConfigurationProc
         }
 
         val createColumnConfigMethodBuilder = MethodSpec.methodBuilder(createColumnConfigMethodName)
+                .addModifiers(Modifier.PRIVATE)
                 .addException(ReflectiveOperationException::class.java)
                 .returns(ColumnConfig::class.java)
+
                 .addStatement("\$T column = new \$T(this, new \$T(this.getEntityClass().getDeclaredField(\$S), \$L, \$L))", columnConfigName, columnConfigName,
                         ClassName.get(Property::class.java), property.field.name, createGetterStatement, createSetterStatement)
                 .addStatement("reflectionHelper.makeAccessible(column.getProperty())")
+                .addCode(System.lineSeparator())
+
                 .addStatement("column.setColumnName(\$S)", columnConfig.columnName)
                 .addStatement("column.setTableName(\$S)", columnConfig.tableName)
 
                 .addStatement("column.setDataType(" + if(columnConfig.dataType == null) "null)" else "\$T.\$L)", ClassName.get(DataType::class.java), columnConfig.dataType)
+                .addCode(System.lineSeparator())
 
                 .addStatement("column.setId(\$L)", columnConfig.isId)
                 .addStatement("column.setGeneratedId(\$L)", columnConfig.isGeneratedId)
                 .addStatement("column.setGeneratedIdType(\$T.\$L)", ClassName.get(GenerationType::class.java), columnConfig.generatedIdType)
                 .addStatement("column.setIdGenerator(\$S)", columnConfig.idGenerator)
                 .addStatement("column.setGeneratedIdSequence(\$S)", columnConfig.generatedIdSequence)
+                .addCode(System.lineSeparator())
 
                 .addStatement("column.setVersion(\$L)", columnConfig.isVersion)
                 .addStatement("column.setLob(\$L)", columnConfig.isLob)
+                .addCode(System.lineSeparator())
 
                 .addStatement("column.setColumnDefinition(\$S)", columnConfig.columnDefinition)
                 .addStatement("column.setLength(\$L)", columnConfig.length)
                 .addStatement("column.setScale(\$L)", columnConfig.scale)
                 .addStatement("column.setPrecision(\$L)", columnConfig.precision)
+                .addCode(System.lineSeparator())
 
                 .addStatement("column.setCanBeNull(\$L)", columnConfig.canBeNull)
                 .addStatement("column.setUnique(\$L)", columnConfig.unique)
                 .addStatement("column.setInsertable(\$L)", columnConfig.insertable)
                 .addStatement("column.setUpdatable(\$L)", columnConfig.updatable)
                 .addStatement("column.setFetch(\$T.\$L)", ClassName.get(FetchType::class.java), columnConfig.fetch)
+                .addCode(System.lineSeparator())
 
                 .addStatement("column.setRelationType(\$T.\$L)", ClassName.get(RelationType::class.java), columnConfig.relationType)
+                .addCode(System.lineSeparator())
 
                 // TODO: add target entity
 
                 .addStatement("column.setOrphanRemoval(\$L)", columnConfig.orphanRemoval)
                 .addStatement("column.setReferencedColumnName(\$S)", columnConfig.referencedColumnName)
+                .addCode(System.lineSeparator())
 
                 .addStatement("column.setJoinColumn(\$L)", columnConfig.isJoinColumn)
 
                 .addStatement("column.setCascade(new \$T[] { \$N })", ClassName.get(CascadeType::class.java), columnConfig.cascade.joinToString { "CascadeType." + it.toString() })
+                .addCode(System.lineSeparator())
 
                 .addStatement("return column")
 
@@ -173,6 +194,7 @@ class SourceCodeGeneratorEntityConfigurationProcessor : IEntityConfigurationProc
         // TODO: make life cycle methods accessible
 
         val addLifeCycleMethodsBuilder = MethodSpec.methodBuilder("addLifeCycleMethods")
+                .addModifiers(Modifier.PRIVATE)
                 .addException(NoSuchMethodException::class.java)
 
         entityConfig.prePersistLifeCycleMethods.forEach {
