@@ -137,13 +137,13 @@ class EntityConfigurationReader(private val reflectionHelper: ReflectionHelper =
 
     private fun getClassHierarchy(entityClass: Class<*>) : List<Class<*>> {
         val classHierarchy = mutableListOf<Class<*>>()
-        var classWalk: Class<*>? = entityClass.javaClass.superclass
+        var classWalk: Class<*>? = entityClass.superclass
 
         while (classWalk != null) {
             if (classIsEntityOrMappedSuperclass(classWalk)) {
                 classHierarchy.add(0, classWalk)
 
-                classWalk = classWalk.javaClass.superclass
+                classWalk = classWalk.superclass
             }
             else {
                 break
