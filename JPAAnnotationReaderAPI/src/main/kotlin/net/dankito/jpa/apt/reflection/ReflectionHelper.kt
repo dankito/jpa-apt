@@ -58,7 +58,7 @@ class ReflectionHelper {
     }
 
 
-    fun findProperties(fields: List<Field>, methodsMap: MutableMap<String, Method>, context: AnnotationProcessingContext) : List<Property> {
+    fun findProperties(fields: List<Field>, methodsMap: MutableMap<String, Method>, context: net.dankito.jpa.apt.AnnotationProcessingContext) : List<Property> {
         val properties = ArrayList<Property>()
 
         for(field in fields) {
