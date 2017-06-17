@@ -55,6 +55,13 @@ open class ColumnConfig(val entityConfig: EntityConfig, val property: Property) 
     var isJoinColumn = false
 
     var cascade = arrayOfNulls<CascadeType>(0)
+        set(value) {
+            field = value
+
+            cascadePersist = hasCascadeType(CascadeType.PERSIST)
+        }
+
+    var cascadePersist: Boolean = false
 
 
     fun isEnumType(): Boolean {
@@ -81,6 +88,10 @@ open class ColumnConfig(val entityConfig: EntityConfig, val property: Property) 
 
     fun hasOrderColumns(): Boolean {
         return false
+    }
+
+    private fun hasCascadeType(cascadeType: CascadeType): Boolean {
+        return cascade.contains(cascadeType)
     }
 
 
