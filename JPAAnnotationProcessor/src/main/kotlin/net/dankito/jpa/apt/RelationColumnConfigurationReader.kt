@@ -290,11 +290,7 @@ class RelationColumnConfigurationReader {
 
     @Throws(SQLException::class)
     private fun getTargetEntityConfig(column: ColumnConfig, annotationTargetEntityValue: Class<*>?, context: AnnotationProcessingContext): EntityConfig {
-        var targetEntityClass = column.type
-
-        if (annotationTargetEntityValue != null && annotationTargetEntityValue != Void::class) { // Void is the default value for targetEntity
-            targetEntityClass = annotationTargetEntityValue
-        }
+        var targetEntityClass = getTargetEntityClass(column, annotationTargetEntityValue)
 
         val targetEntity = context.getEntityConfigForClass(targetEntityClass)
         if(targetEntity == null) {
@@ -303,6 +299,33 @@ class RelationColumnConfigurationReader {
         }
 
         return targetEntity
+    }
+
+    @Throws(SQLException::class)
+    private fun getTargetEntityClass(column: ColumnConfig, annotationTargetEntityValue: Class<*>?): Class<*> {
+        var targetEntityClass = column.type
+
+        if (annotationTargetEntityValue != null && annotationTargetEntityValue != Void::class) { // Void is the default value for targetEntity
+            // TODO
+    //            if(isEntityOrMappedSuperclass(annotationTargetEntityValue) == false) {
+    //                throw SQLException("Target Class " + annotationTargetEntityValue + " on Property " + column + " is not configured as @Entity or @MappedSuperclass.\r\n" +
+    //                        "Please add @Entity or @MappedSuperclass to $annotationTargetEntityValue.")
+    //            }
+
+            targetEntityClass = annotationTargetEntityValue
+        }
+        else if (Collection::class.java.isAssignableFrom(targetEntityClass)) {
+            val genericType = column.property.getGenericType()
+
+            if (genericType == null) {
+                throw SQLException("For relation property " + column + " either Annotation's targetEntity value has to be set or it's type has to be a " +
+                        "Collection with generic type set to target entity's type.")
+            } else {
+                targetEntityClass = genericType
+            }
+        }
+
+        return targetEntityClass
     }
 
 }
