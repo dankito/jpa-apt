@@ -2,10 +2,7 @@ package net.dankito.jpa.apt.reflection
 
 import net.dankito.jpa.apt.AnnotationProcessingContext
 import net.dankito.jpa.apt.config.Property
-import java.lang.reflect.Constructor
-import java.lang.reflect.Field
-import java.lang.reflect.Method
-import java.lang.reflect.Modifier
+import java.lang.reflect.*
 import java.util.*
 import javax.persistence.Transient
 
@@ -27,14 +24,6 @@ class ReflectionHelper {
 
         for(constructor in constructors) {
             if (constructor.parameterTypes.isEmpty()) {
-                if (!constructor.isAccessible) {
-                    try {
-                        constructor.isAccessible = true
-                    } catch (e: SecurityException) {
-                        throw IllegalArgumentException("Could not open access to constructor for " + entityClass)
-                    }
-
-                }
                 return constructor
             }
         }
@@ -47,6 +36,27 @@ class ReflectionHelper {
                     + ".  Missing static on inner class?")
         }
     }
+
+
+    fun makeAccessible(property: Property) {
+        makeAccessible(property.field)
+
+        property.getter?.let { getter -> makeAccessible(getter) }
+
+        property.setter?.let { setter -> makeAccessible(setter) }
+    }
+
+    fun makeAccessible(accessibleObject: AccessibleObject) {
+        if (!accessibleObject.isAccessible) {
+            try {
+                val test = accessibleObject.toString()
+                accessibleObject.isAccessible = true
+            } catch (e: SecurityException) {
+                throw IllegalArgumentException("Could not make " + accessibleObject + " accessible", e)
+            }
+        }
+    }
+
 
     fun findProperties(fields: List<Field>, methodsMap: MutableMap<String, Method>, context: AnnotationProcessingContext) : List<Property> {
         val properties = ArrayList<Property>()
