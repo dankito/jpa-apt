@@ -43,10 +43,7 @@ class RelationColumnConfigurationReader {
         readJoinColumnConfiguration(column, element)
 
         val targetEntityAnnotationValue = getClassFromAnnotationValue(oneToOne)
-        targetEntityAnnotationValue?.let { targetEntityAnnotationValue -> // should actually never be null
-            column.targetEntity = getTargetEntityConfig(column, targetEntityAnnotationValue, context)
-        }
-        // TODO: if targetEntity on annotation is not set, get targetEntity from type
+        column.targetEntity = getTargetEntityConfig(column, targetEntityAnnotationValue, context)
 
         column.cascade = oneToOne.cascade.filterNotNull().toTypedArray()
 
@@ -79,9 +76,7 @@ class RelationColumnConfigurationReader {
         column.relationType = RelationType.OneToMany
 
         val targetEntityAnnotationValue = getClassFromAnnotationValue(oneToMany)
-        targetEntityAnnotationValue?.let { targetEntityAnnotationValue ->
-            column.targetEntity = getTargetEntityConfig(column, targetEntityAnnotationValue, context)
-        }
+        column.targetEntity = getTargetEntityConfig(column, targetEntityAnnotationValue, context)
 
         column.cascade = oneToMany.cascade.filterNotNull().toTypedArray()
 
@@ -114,9 +109,7 @@ class RelationColumnConfigurationReader {
         column.relationType = RelationType.ManyToMany
 
         val targetEntityAnnotationValue = getClassFromAnnotationValue(manyToMany)
-        targetEntityAnnotationValue?.let { targetEntityAnnotationValue ->
-            column.targetEntity = getTargetEntityConfig(column, targetEntityAnnotationValue, context)
-        }
+        column.targetEntity = getTargetEntityConfig(column, targetEntityAnnotationValue, context)
 
         column.cascade = manyToMany.cascade.filterNotNull().toTypedArray()
 
@@ -296,10 +289,10 @@ class RelationColumnConfigurationReader {
 
 
     @Throws(SQLException::class)
-    private fun getTargetEntityConfig(column: ColumnConfig, annotationTargetEntityValue: Class<*>, context: AnnotationProcessingContext): EntityConfig {
+    private fun getTargetEntityConfig(column: ColumnConfig, annotationTargetEntityValue: Class<*>?, context: AnnotationProcessingContext): EntityConfig {
         var targetEntityClass = column.type
 
-        if (annotationTargetEntityValue != Void::class) { // Void is the default value for targetEntity
+        if (annotationTargetEntityValue != null && annotationTargetEntityValue != Void::class) { // Void is the default value for targetEntity
             targetEntityClass = annotationTargetEntityValue
         }
 
