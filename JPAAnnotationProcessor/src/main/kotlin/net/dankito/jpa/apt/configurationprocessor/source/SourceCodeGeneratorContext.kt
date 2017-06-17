@@ -11,6 +11,9 @@ class SourceCodeGeneratorContext(entityConfiguration: JPAEntityConfiguration) {
 
     private val classNamesToEntityConfigsMap = HashMap<ClassName, EntityConfig>()
 
+    private val targetEntities = HashMap<EntityConfig, Set<EntityConfig>>()
+
+
     init {
         entityConfigsOrderedHierarchically.addAll(entityConfiguration.entities.filter { it.parentEntity == null })
 
@@ -53,6 +56,15 @@ class SourceCodeGeneratorContext(entityConfiguration: JPAEntityConfiguration) {
         }
 
         return null
+    }
+
+
+    fun addTargetEntities(entityConfig: EntityConfig, targetEntities: Set<EntityConfig>) {
+        this.targetEntities.put(entityConfig, targetEntities)
+    }
+
+    fun getTargetEntities(entityConfig: EntityConfig): Set<EntityConfig>? {
+        return this.targetEntities[entityConfig]
     }
 
 }
