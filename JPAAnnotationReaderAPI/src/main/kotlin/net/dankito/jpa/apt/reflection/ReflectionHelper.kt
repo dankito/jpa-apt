@@ -48,7 +48,6 @@ class ReflectionHelper {
     fun makeAccessible(accessibleObject: AccessibleObject) {
         if (!accessibleObject.isAccessible) {
             try {
-                val test = accessibleObject.toString()
                 accessibleObject.isAccessible = true
             } catch (e: SecurityException) {
                 throw IllegalArgumentException("Could not make " + accessibleObject + " accessible", e)
