@@ -26,7 +26,8 @@ class ColumnConfigurationReader(private var relationColumnConfigurationReader: R
         val fields = reflectionHelper.getNonStaticNonTransientFields(entityConfig.entityClass)
         val methodsMap = reflectionHelper.getNonStaticNonAbstractNonTransientMethodsMap(entityConfig.entityClass)
 
-        val properties = reflectionHelper.findProperties(fields, methodsMap, context)
+        val properties = reflectionHelper.findProperties(fields, methodsMap)
+        properties.forEach { context.registerProperty(it) }
 
         readEntityColumns(properties, entityConfig, context)
     }

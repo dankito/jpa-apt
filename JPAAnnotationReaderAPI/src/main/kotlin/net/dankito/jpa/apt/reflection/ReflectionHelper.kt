@@ -1,6 +1,5 @@
 package net.dankito.jpa.apt.reflection
 
-import net.dankito.jpa.apt.AnnotationProcessingContext
 import net.dankito.jpa.apt.config.Property
 import java.lang.reflect.*
 import java.util.*
@@ -58,7 +57,7 @@ class ReflectionHelper {
     }
 
 
-    fun findProperties(fields: List<Field>, methodsMap: MutableMap<String, Method>, context: net.dankito.jpa.apt.AnnotationProcessingContext) : List<Property> {
+    fun findProperties(fields: List<Field>, methodsMap: MutableMap<String, Method>) : List<Property> {
         val properties = ArrayList<Property>()
 
         for(field in fields) {
@@ -66,7 +65,6 @@ class ReflectionHelper {
             val setter = findSetMethod(field, methodsMap)
 
             val property = Property(field, getter, setter)
-            context.registerProperty(property)
             properties.add(property)
         }
 
