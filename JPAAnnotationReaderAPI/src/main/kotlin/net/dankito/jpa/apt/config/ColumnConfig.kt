@@ -57,6 +57,10 @@ open class ColumnConfig(val entityConfig: EntityConfig, val property: Property) 
     var cascade = arrayOfNulls<CascadeType>(0)
 
 
+    fun isEnumType(): Boolean {
+        return type.isEnum
+    }
+
     fun isRelationshipColumn(): Boolean {
         return relationType != RelationType.None
     }
