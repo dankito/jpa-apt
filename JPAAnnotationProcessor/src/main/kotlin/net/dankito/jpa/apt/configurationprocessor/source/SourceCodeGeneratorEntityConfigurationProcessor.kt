@@ -71,7 +71,7 @@ class SourceCodeGeneratorEntityConfigurationProcessor : IEntityConfigurationProc
 
         addNewLine(constructorBuilder)
 
-        addCreateColumnConfigsMethod(entityClassBuilder, entityConfig)
+        addCreateColumnConfigsMethod(entityClassBuilder, entityConfig, context)
 
         addLifeCycleMethods(entityClassBuilder, constructorBuilder, entityConfig)
 
@@ -89,33 +89,49 @@ class SourceCodeGeneratorEntityConfigurationProcessor : IEntityConfigurationProc
         context.addEntityConfig(ClassName.get(packageName, className), entityConfig)
     }
 
-    private fun addCreateColumnConfigsMethod(entityClassBuilder: TypeSpec.Builder, entityConfig: EntityConfig) {
+    private fun addCreateColumnConfigsMethod(entityClassBuilder: TypeSpec.Builder, entityConfig: EntityConfig, context: SourceCodeGeneratorContext) {
         val columnConfigName = ClassName.get(ColumnConfig::class.java)
 
         val createColumnConfigsBuilder = MethodSpec.methodBuilder("createColumnConfigs")
                 .addModifiers(Modifier.PUBLIC)
                 .addException(Exception::class.java)
 
+        val targetEntityParameterNames = LinkedHashSet<String>()
+        val targetEntities = LinkedHashSet<EntityConfig>()
+
         for(columnConfig in entityConfig.columns) {
             val createColumnConfigMethodName = "create" + (columnConfig.columnName.substring(0, 1).toUpperCase() + columnConfig.columnName.substring(1)) + "ColumnConfig"
             addCreateColumnConfigMethod(createColumnConfigMethodName, columnConfigName, entityClassBuilder, columnConfig)
 
+            var targetEntityParameterValue = "null"
+            columnConfig.targetEntity?.let { targetEntity ->
+                targetEntityParameterValue = getEntityConfigVariableName(targetEntity)
+                targetEntityParameterNames.add(targetEntityParameterValue)
+                targetEntities.add(targetEntity)
+            }
+
             if(columnConfig.isId) {
-                createColumnConfigsBuilder.addStatement("\$T idColumn = \$N()", columnConfigName, createColumnConfigMethodName)
+                createColumnConfigsBuilder.addStatement("\$T idColumn = \$N(\$L)", columnConfigName, createColumnConfigMethodName, targetEntityParameterValue)
                 createColumnConfigsBuilder.addStatement("addColumn(idColumn)")
                 createColumnConfigsBuilder.addStatement("setIdColumnAndSetItOnChildEntities(idColumn)")
             }
             else if(columnConfig.isVersion) {
-                createColumnConfigsBuilder.addStatement("\$T versionColumn = \$N()", columnConfigName, createColumnConfigMethodName)
+                createColumnConfigsBuilder.addStatement("\$T versionColumn = \$N(\$L)", columnConfigName, createColumnConfigMethodName, targetEntityParameterValue)
                 createColumnConfigsBuilder.addStatement("addColumn(versionColumn)")
                 createColumnConfigsBuilder.addStatement("setVersionColumnAndSetItOnChildEntities(versionColumn)")
             }
             else {
-                createColumnConfigsBuilder.addStatement("addColumn(\$N())", createColumnConfigMethodName)
+                createColumnConfigsBuilder.addStatement("addColumn(\$N(\$L))", createColumnConfigMethodName, targetEntityParameterValue)
             }
         }
 
+        for(targetEntityParameterName in targetEntityParameterNames) {
+            createColumnConfigsBuilder.addParameter(EntityConfig::class.java, targetEntityParameterName)
+        }
+
         entityClassBuilder.addMethod(createColumnConfigsBuilder.build())
+
+        context.addTargetEntities(entityConfig, targetEntities)
     }
 
     private fun addCreateColumnConfigMethod(createColumnConfigMethodName: String, columnConfigName: ClassName, entityClassBuilder: TypeSpec.Builder, columnConfig: ColumnConfig) {
@@ -140,6 +156,7 @@ class SourceCodeGeneratorEntityConfigurationProcessor : IEntityConfigurationProc
         val createColumnConfigMethodBuilder = MethodSpec.methodBuilder(createColumnConfigMethodName)
                 .addModifiers(Modifier.PRIVATE)
                 .addException(ReflectiveOperationException::class.java)
+                .addParameter(EntityConfig::class.java, "targetEntity")
                 .returns(ColumnConfig::class.java)
 
                 .addStatement("\$T column = new \$T(this, new \$T(this.getEntityClass().getDeclaredField(\$S), \$L, \$L))", columnConfigName, columnConfigName,
@@ -180,7 +197,8 @@ class SourceCodeGeneratorEntityConfigurationProcessor : IEntityConfigurationProc
                 .addStatement("column.setRelationType(\$T.\$L)", ClassName.get(RelationType::class.java), columnConfig.relationType)
                 .addCode(System.lineSeparator())
 
-                // TODO: add target entity
+                .addStatement("column.setTargetEntity(targetEntity)")
+                .addCode(System.lineSeparator())
 
                 .addStatement("column.setOrphanRemoval(\$L)", columnConfig.orphanRemoval)
                 .addStatement("column.setReferencedColumnName(\$S)", columnConfig.referencedColumnName)
@@ -249,16 +267,27 @@ class SourceCodeGeneratorEntityConfigurationProcessor : IEntityConfigurationProc
                 .returns(listOfEntityConfigs)
                 .addStatement("\$T result = new \$T<>()", listOfEntityConfigs, arrayList)
 
+        val entityConfigVariableNames = HashMap<EntityConfig, String>()
+
         for(entityConfig in context.getEntityConfigsOrderedHierarchically()) {
             val className = context.getClassName(entityConfig)
             val parentEntity = entityConfig.parentEntity
             val parentEntityVariableName = if(parentEntity == null) "null" else getEntityConfigVariableName(context.getClassName(parentEntity))
 
             val variableName = getEntityConfigVariableName(className)
+            entityConfigVariableNames.put(entityConfig, variableName)
+
             addNewLine(getGeneratedEntityConfigsBuilder)
             getGeneratedEntityConfigsBuilder.addStatement("\$T \$N = new \$T(\$N)", className, variableName, className, parentEntityVariableName)
-            getGeneratedEntityConfigsBuilder.addStatement("\$N.createColumnConfigs()", variableName)
             getGeneratedEntityConfigsBuilder.addStatement("result.add(\$N)", variableName)
+        }
+
+        addNewLine(getGeneratedEntityConfigsBuilder)
+        for((entityConfig, variableName) in entityConfigVariableNames) {
+            val targetEntities = context.getTargetEntities(entityConfig)
+            val parameterList = targetEntities?.map { getEntityConfigVariableName(context.getClassName(it)) }?.filterNotNull()?.joinToString(", ")
+
+            getGeneratedEntityConfigsBuilder.addStatement("\$N.createColumnConfigs(\$L)", variableName, parameterList)
         }
 
         addNewLine(getGeneratedEntityConfigsBuilder)
@@ -277,6 +306,10 @@ class SourceCodeGeneratorEntityConfigurationProcessor : IEntityConfigurationProc
                 .build()
 
         javaFile.writeTo(processingEnv.filer)
+    }
+
+    fun getEntityConfigVariableName(entityConfig: EntityConfig): String {
+        return getEntityConfigVariableName(ClassName.get(entityConfig.entityClass))
     }
 
     fun getEntityConfigVariableName(className: ClassName?): String {
