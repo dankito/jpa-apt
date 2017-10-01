@@ -1,6 +1,8 @@
 group 'net.dankito'
 version '1.0-SNAPSHOT'
 
+apply from: '../versions.gradle' // remove when developing in library directly
+
 apply plugin: 'java'
 apply plugin: 'kotlin'
 
