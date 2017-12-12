@@ -21,7 +21,7 @@ sourceSets {
 }
 
 dependencies {
-    compile project(':JPAAnnotationReaderAPI')
+    compile "$group:api:$version"
 
     compile "com.squareup:javapoet:$javaPoetVersion"
 
