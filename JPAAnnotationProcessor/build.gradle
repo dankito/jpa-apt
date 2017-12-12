@@ -10,7 +10,7 @@ apply plugin: 'kotlin'
 apply plugin: 'maven'
 apply plugin: 'signing'
 
-// So after executing uploadArchives staged repository can be closed and released by executing RichTextEditorAndroid:closeAndReleaseRepository
+// So after executing uploadArchives staged repository can be closed and released by executing JPAAnnotationProcessor:closeAndReleaseRepository
 apply plugin: 'io.codearte.nexus-staging'
 
 
