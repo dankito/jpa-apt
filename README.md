@@ -16,8 +16,8 @@ sourceSets {
 }
 
 dependencies {
-  compile 'net.dankito.jpa.annotationreader:jpa-apt:1.0-SNAPSHOT'
-  kapt 'net.dankito.jpa.annotationreader:jpa-apt:1.0-SNAPSHOT'
+  compile 'net.dankito.jpa.annotationreader:jpa-apt:1.0-alpha'
+  kapt 'net.dankito.jpa.annotationreader:jpa-apt:1.0-alpha'
 }
 ```
 
@@ -26,7 +26,7 @@ Maven:
 <dependency>
    <groupId>net.dankito.jpa.annotationreader</groupId>
    <artifactId>jpa-apt</artifactId>
-   <version>1.0-SNAPSHOT</version>
+   <version>1.0-alpha</version>
 </dependency>
 ```
 
