@@ -6,6 +6,9 @@ apply plugin: 'kotlin'
 
 sourceCompatibility = 1.7
 
+sourceSets {
+    test.java.srcDirs += 'build/generated/'
+}
 
 dependencies {
     compile project(':JPAAnnotationReaderAPI')
