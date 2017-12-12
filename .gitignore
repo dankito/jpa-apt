@@ -10,5 +10,7 @@ build/
 /local.properties
 /gradle.properties
 
+GeneratedModel.json
+
 .DS_Store
 .externalNativeBuild
