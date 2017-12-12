@@ -2,6 +2,8 @@
 def mavenArtifactId = "jpa-apt"
 
 
+apply from: '../versions.gradle' // remove when developing in library directly
+
 apply plugin: 'java'
 apply plugin: 'kotlin'
 
