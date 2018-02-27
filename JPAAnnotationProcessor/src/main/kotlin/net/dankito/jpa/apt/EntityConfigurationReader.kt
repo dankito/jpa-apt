@@ -19,7 +19,9 @@ class EntityConfigurationReader(private val reflectionHelper: ReflectionHelper =
     }
 
     private fun readEntityConfigsDownTheTypeHierarchy(context: AnnotationProcessingContext, entityTypeInfo: EntityTypeInfo, currentInheritanceTypeSubEntities: List<EntityConfig>) {
-        readEntityConfig(context, entityTypeInfo, currentInheritanceTypeSubEntities)
+        entityTypeInfo.entityElement?.let { entityElement -> // if entityElement is null then entity has been loaded from a previously built module and its EntityConfig therefore already created
+            readEntityConfig(context, entityTypeInfo, entityElement, currentInheritanceTypeSubEntities)
+        }
 
         entityTypeInfo.childClasses.forEach {
             readEntityConfigsDownTheTypeHierarchy(context, it, currentInheritanceTypeSubEntities)
@@ -28,7 +30,8 @@ class EntityConfigurationReader(private val reflectionHelper: ReflectionHelper =
 
 
     @Throws(SQLException::class)
-    private fun readEntityConfig(context: AnnotationProcessingContext, entityTypeInfo: EntityTypeInfo, currentInheritanceTypeSubEntities: List<EntityConfig>): EntityConfig {
+    private fun readEntityConfig(context: AnnotationProcessingContext, entityTypeInfo: EntityTypeInfo, entityElement: Element,
+                                 currentInheritanceTypeSubEntities: List<EntityConfig>): EntityConfig {
         context.processingEnv.messager.printMessage(Diagnostic.Kind.NOTE, "Reading configuration for " + entityTypeInfo.entityClass.simpleName)
 
         val entityConfig = createEntityConfig(entityTypeInfo.entityClass, currentInheritanceTypeSubEntities)
@@ -39,7 +42,7 @@ class EntityConfigurationReader(private val reflectionHelper: ReflectionHelper =
             superClassEntityConfig.addChildEntityConfig(entityConfig)
         } }
 
-        readEntityAnnotations(entityConfig, entityTypeInfo.entityElement)
+        readEntityAnnotations(entityConfig, entityElement)
         findLifeCycleEvents(entityConfig)
 
         return entityConfig

@@ -7,7 +7,7 @@ import javax.lang.model.element.VariableElement
 import javax.lang.model.type.DeclaredType
 
 
-data class EntityTypeInfo(val entityClass: Class<*>, val entityElement: TypeElement,
+data class EntityTypeInfo(val entityClass: Class<*>, val entityElement: TypeElement?,
                           val classAnnotations: MutableMap<DeclaredType, Map<out ExecutableElement, AnnotationValue>> = HashMap(),
                           val properties: MutableMap<String, VariableElement> = HashMap(),
                           val methods: MutableMap<String, ExecutableElement> = HashMap(),

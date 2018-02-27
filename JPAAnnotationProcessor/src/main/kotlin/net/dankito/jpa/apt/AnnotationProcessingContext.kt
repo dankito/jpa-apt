@@ -56,6 +56,10 @@ class AnnotationProcessingContext(val roundEnv: RoundEnvironment, val processing
         val entitiesAndMappedSuperclasses = LinkedHashSet<Element>(roundEnv.getElementsAnnotatedWith(MappedSuperclass::class.java))
         entitiesAndMappedSuperclasses.addAll(roundEnv.getElementsAnnotatedWith(Entity::class.java))
 
+        entityConfigsFromPreviousBuiltProjects.forEach { // also add previously created EntityConfigs so we know them if they are parent classes of this module's entities.
+            entityTypes.put(it.key, EntityTypeInfo(it.key, null)) // entityElement can be set to null here as EntityConfig is already known and we don't need to re-read it
+        }
+
         entitiesAndMappedSuperclasses.forEach { element ->
             try {
                 createEntityTypeInfoForElement(element)
