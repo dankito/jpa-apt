@@ -20,7 +20,7 @@ class EntityConfigurationReader(private val reflectionHelper: ReflectionHelper =
 
     private fun readEntityConfigsDownTheTypeHierarchy(context: AnnotationProcessingContext, entityTypeInfo: EntityTypeInfo, currentInheritanceTypeSubEntities: List<EntityConfig>) {
         entityTypeInfo.entityElement?.let { entityElement -> // if entityElement is null then entity has been loaded from a previously built module and its EntityConfig therefore already created
-            readEntityConfig(context, entityTypeInfo, entityElement, currentInheritanceTypeSubEntities)
+            readEntityConfig(context, entityTypeInfo, entityElement)
         }
 
         entityTypeInfo.childClasses.forEach {
@@ -30,17 +30,16 @@ class EntityConfigurationReader(private val reflectionHelper: ReflectionHelper =
 
 
     @Throws(SQLException::class)
-    private fun readEntityConfig(context: AnnotationProcessingContext, entityTypeInfo: EntityTypeInfo, entityElement: Element,
-                                 currentInheritanceTypeSubEntities: List<EntityConfig>): EntityConfig {
+    private fun readEntityConfig(context: AnnotationProcessingContext, entityTypeInfo: EntityTypeInfo, entityElement: Element): EntityConfig {
         context.processingEnv.messager.printMessage(Diagnostic.Kind.NOTE, "Reading configuration for " + entityTypeInfo.entityClass.simpleName)
 
-        val entityConfig = createEntityConfig(entityTypeInfo.entityClass, currentInheritanceTypeSubEntities)
+        val entityConfig = createEntityConfig(entityTypeInfo.entityClass)
 
         context.registerEntityConfig(entityConfig)
 
-        entityTypeInfo.superClassInfo?.let { context.getEntityConfigForClass(it.entityClass)?.let { superClassEntityConfig ->
-            superClassEntityConfig.addChildEntityConfig(entityConfig)
-        } }
+        entityTypeInfo.superClassInfo?.let {
+            context.getEntityConfigForClass(it.entityClass)?.addChildEntityConfig(entityConfig)
+        }
 
         readEntityAnnotations(entityConfig, entityElement)
         findLifeCycleEvents(entityConfig)
@@ -49,8 +48,8 @@ class EntityConfigurationReader(private val reflectionHelper: ReflectionHelper =
     }
 
     @Throws(SQLException::class)
-    private fun createEntityConfig(entityClass: Class<*>, currentInheritanceTypeSubEntities: List<EntityConfig>): EntityConfig {
-        var entityConfig: EntityConfig? = null
+    private fun createEntityConfig(entityClass: Class<*>): EntityConfig {
+        val entityConfig: EntityConfig?
         val inheritanceStrategy = getInheritanceStrategyIfEntityIsInheritanceStartEntity(entityClass)
 
         if (inheritanceStrategy == null) {

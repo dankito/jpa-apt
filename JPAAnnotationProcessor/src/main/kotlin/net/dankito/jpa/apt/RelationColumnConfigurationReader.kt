@@ -28,11 +28,11 @@ class RelationColumnConfigurationReader {
         }
 
         element.getAnnotation(OneToMany::class.java)?.let { oneToMany ->
-            readOneToManyConfiguration(column, element, oneToMany, context)
+            readOneToManyConfiguration(column, oneToMany, context)
         }
 
         element.getAnnotation(ManyToMany::class.java)?.let { manyToMany ->
-            readManyToManyConfiguration(column, element, manyToMany, context)
+            readManyToManyConfiguration(column, manyToMany, context)
         }
     }
 
@@ -91,7 +91,7 @@ class RelationColumnConfigurationReader {
     }
 
 
-    private fun readOneToManyConfiguration(column: ColumnConfig, element: Element, oneToMany: OneToMany, context: AnnotationProcessingContext) {
+    private fun readOneToManyConfiguration(column: ColumnConfig, oneToMany: OneToMany, context: AnnotationProcessingContext) {
         column.relationType = RelationType.OneToMany
 
         val targetEntityAnnotationValue = getClassFromAnnotationValue(oneToMany)
@@ -124,7 +124,7 @@ class RelationColumnConfigurationReader {
     }
 
 
-    private fun readManyToManyConfiguration(column: ColumnConfig, element: Element, manyToMany: ManyToMany, context: AnnotationProcessingContext) {
+    private fun readManyToManyConfiguration(column: ColumnConfig, manyToMany: ManyToMany, context: AnnotationProcessingContext) {
         column.relationType = RelationType.ManyToMany
 
         val targetEntityAnnotationValue = getClassFromAnnotationValue(manyToMany)
