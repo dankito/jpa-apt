@@ -57,7 +57,7 @@ class JPAAnnotationProcessor : AbstractProcessor() {
 
 
     private fun createResult(context: AnnotationProcessingContext): JPAEntityConfiguration {
-        return JPAEntityConfiguration(context.getAllReadEntityConfigs())
+        return JPAEntityConfiguration(context.getAllReadEntityConfigsInOrderAdded())
     }
 
 }

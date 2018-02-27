@@ -16,11 +16,12 @@ import javax.tools.Diagnostic
 
 class AnnotationProcessingContext(val roundEnv: RoundEnvironment, val processingEnv: ProcessingEnvironment) {
 
-    private val entityConfigRegistry = HashMap<Class<*>, EntityConfig>()
+    private val entityConfigRegistry = LinkedHashMap<Class<*>, EntityConfig>()
 
     private val entityConfigsInOrderAdded = ArrayList<EntityConfig>()
 
-    private val entityConfigsFromPreviousBuiltProjects = HashMap<Class<*>, EntityConfig>()
+    private val entityConfigsFromPreviousBuiltProjects = LinkedHashMap<Class<*>, EntityConfig>() // it's very important to keep order so that later on EntityConfigs get created
+    // according to their hierarchy (EntityConfigs of base classes have to be created first)
 
     private val propertyRegistry = HashMap<Field, Property>()
 
@@ -125,8 +126,8 @@ class AnnotationProcessingContext(val roundEnv: RoundEnvironment, val processing
         return entityConfigsInOrderAdded
     }
 
-    fun getAllReadEntityConfigs() : List<EntityConfig> {
-        val allEntityConfigs = HashMap<Class<*>, EntityConfig>()
+    fun getAllReadEntityConfigsInOrderAdded() : List<EntityConfig> {
+        val allEntityConfigs = LinkedHashMap<Class<*>, EntityConfig>()
 
         allEntityConfigs.putAll(entityConfigsFromPreviousBuiltProjects)
         allEntityConfigs.putAll(entityConfigRegistry) // EntityConfigs already added by entityConfigsFromPreviousBuiltProjects get overwritten here
