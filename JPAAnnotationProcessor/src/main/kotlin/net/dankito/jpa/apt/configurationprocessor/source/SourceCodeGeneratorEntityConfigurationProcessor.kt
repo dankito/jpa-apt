@@ -36,7 +36,8 @@ class SourceCodeGeneratorEntityConfigurationProcessor : IEntityConfigurationProc
     }
 
     private fun createEntityConfigClass(entityConfig: EntityConfig, context: SourceCodeGeneratorContext, processingEnv: ProcessingEnvironment) {
-        val className = entityConfig.entityClass.simpleName + "EntityConfig"
+        // real class name may be used twice, but a table name has to be unique in a database -> use tableName instead of entityConfig.entityClass.simpleName
+        val className = entityConfig.tableName + "EntityConfig"
         val packageName = entityConfig.entityClass.`package`.name
 
         val entityClassName = ClassName.get(entityConfig.entityClass)
