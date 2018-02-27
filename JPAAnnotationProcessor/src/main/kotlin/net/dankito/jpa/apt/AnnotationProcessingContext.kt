@@ -126,12 +126,12 @@ class AnnotationProcessingContext(val roundEnv: RoundEnvironment, val processing
     }
 
     fun getAllReadEntityConfigs() : List<EntityConfig> {
-        val allEntityConfigs = ArrayList<EntityConfig>()
+        val allEntityConfigs = HashMap<Class<*>, EntityConfig>()
 
-        allEntityConfigs.addAll(entityConfigsFromPreviousBuiltProjects.values)
-        allEntityConfigs.addAll(getEntityConfigsInOrderAdded())
+        allEntityConfigs.putAll(entityConfigsFromPreviousBuiltProjects)
+        allEntityConfigs.putAll(entityConfigRegistry) // EntityConfigs already added by entityConfigsFromPreviousBuiltProjects get overwritten here
 
-        return allEntityConfigs
+        return allEntityConfigs.values.toList()
     }
 
     fun registerProperty(property: Property) {
