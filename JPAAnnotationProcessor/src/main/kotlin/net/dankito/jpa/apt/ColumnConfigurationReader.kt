@@ -147,7 +147,7 @@ class ColumnConfigurationReader(private var relationColumnConfigurationReader: R
 
     private fun readLobAnnotation(column: ColumnConfig, element: Element) {
         // TODO: configure Lob field; set settings according to p. 39/40
-        element.getAnnotation(Lob::class.java)?.let { lob ->
+        element.getAnnotation(Lob::class.java)?.let {
             column.isLob = true
 
             // A Lob may be either a binary or character type.
@@ -171,7 +171,7 @@ class ColumnConfigurationReader(private var relationColumnConfigurationReader: R
 
 
     private fun readIdConfiguration(column: ColumnConfig, element: Element) {
-        element.getAnnotation(Id::class.java)?.let { id ->
+        element.getAnnotation(Id::class.java)?.let {
             val entityConfig = column.entityConfig
 
             column.isId = true
@@ -218,7 +218,7 @@ class ColumnConfigurationReader(private var relationColumnConfigurationReader: R
     }
 
     private fun readVersionConfiguration(column: ColumnConfig, element: Element) {
-        element.getAnnotation(Version::class.java)?.let { version ->
+        element.getAnnotation(Version::class.java)?.let {
             if(isValidDataTypeForVersion(column.type) == false) {
                 throw SQLException("Data Type for @Version property $column is ${column.type} but must be one of these types: " +
                         "int, Integer, short, Short, long, Long, java.sql.Timestamp.")
