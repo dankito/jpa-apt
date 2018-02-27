@@ -36,7 +36,7 @@ class SourceCodeGeneratorEntityConfigurationProcessor : IEntityConfigurationProc
     }
 
     private fun createEntityConfigClass(entityConfig: EntityConfig, context: SourceCodeGeneratorContext, processingEnv: ProcessingEnvironment) {
-        val className = (entityConfig.tableName.substring(0, 1).toUpperCase() + entityConfig.tableName.substring(1)) + "EntityConfig"
+        val className = entityConfig.entityClass.simpleName + "EntityConfig"
         val packageName = entityConfig.entityClass.`package`.name
 
         val entityClassName = ClassName.get(entityConfig.entityClass)
