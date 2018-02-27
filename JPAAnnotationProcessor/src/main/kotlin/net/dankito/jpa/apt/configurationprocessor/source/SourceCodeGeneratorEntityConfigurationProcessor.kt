@@ -15,6 +15,14 @@ import javax.persistence.GenerationType
 
 class SourceCodeGeneratorEntityConfigurationProcessor : IEntityConfigurationProcessor {
 
+    companion object {
+        const val GeneratedEntityConfigsPackageName = "net.dankito.jpa.apt.generated"
+
+        const val GeneratedEntityConfigsClassName = "GeneratedEntityConfigs"
+
+        const val GetGeneratedEntityConfigsMethodName = "getGeneratedEntityConfigs"
+    }
+
     override fun processConfiguration(entityConfiguration: JPAEntityConfiguration, processingEnv: ProcessingEnvironment) {
         val context = SourceCodeGeneratorContext(entityConfiguration)
 
@@ -251,15 +259,15 @@ class SourceCodeGeneratorEntityConfigurationProcessor : IEntityConfigurationProc
 
 
     private fun createEntityConfigClassesLoader(context: SourceCodeGeneratorContext, processingEnv: ProcessingEnvironment) {
-        val generatedEntityConfigsClassName = "GeneratedEntityConfigs" // TODO: extract to globally readable constants in API project
-        val generatedEntityConfigsPackageName = "net.dankito.jpa.apt.generated" // TODO: extract to globally readable constants in API project
+        val generatedEntityConfigsClassName = GeneratedEntityConfigsClassName
+        val generatedEntityConfigsPackageName = GeneratedEntityConfigsPackageName
 
         val entityConfigClassName = ClassName.get(EntityConfig::class.java)
         val list = ClassName.get("java.util", "List")
         val arrayList = ClassName.get("java.util", "ArrayList")
         val listOfEntityConfigs = ParameterizedTypeName.get(list, entityConfigClassName)
 
-        val getGeneratedEntityConfigsBuilder = MethodSpec.methodBuilder("getGeneratedEntityConfigs") // TODO: extract to globally readable constants in API project
+        val getGeneratedEntityConfigsBuilder = MethodSpec.methodBuilder(GetGeneratedEntityConfigsMethodName) // TODO: extract to globally readable constants in API project
                 .addModifiers(Modifier.PUBLIC)
                 .addException(Exception::class.java)
                 .returns(listOfEntityConfigs)
