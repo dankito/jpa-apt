@@ -20,6 +20,8 @@ class AnnotationProcessingContext(val roundEnv: RoundEnvironment, val processing
 
     private val entityConfigsInOrderAdded = ArrayList<EntityConfig>()
 
+    private val entityConfigsFromPreviousBuiltProjects = HashMap<Class<*>, EntityConfig>()
+
     private val propertyRegistry = HashMap<Field, Property>()
 
     private val columnRegistry = HashMap<Property, ColumnConfig>()
@@ -28,13 +30,13 @@ class AnnotationProcessingContext(val roundEnv: RoundEnvironment, val processing
 
 
     init {
-        readAlreadyCreatedEntityConfigs()
+        readEntityConfigsFromPreviousBuildProjects()
 
         categorizeElements()
         orderEntitiesByClassHierarchy()
     }
 
-    private fun readAlreadyCreatedEntityConfigs() {
+    private fun readEntityConfigsFromPreviousBuildProjects() {
         try {
             val generatedEntityConfigsClass = Class.forName(SourceCodeGeneratorEntityConfigurationProcessor.GeneratedEntityConfigsPackageName + "." +
                     SourceCodeGeneratorEntityConfigurationProcessor.GeneratedEntityConfigsClassName)
@@ -44,7 +46,7 @@ class AnnotationProcessingContext(val roundEnv: RoundEnvironment, val processing
             val generatedEntityConfigs = getGeneratedEntityConfigsMethod.invoke(generatedEntityConfigsInstance) as List<EntityConfig>
 
             generatedEntityConfigs.forEach { entityConfig ->
-                registerEntityConfig(entityConfig)
+                entityConfigsFromPreviousBuiltProjects.put(entityConfig.entityClass, entityConfig)
             }
         } catch(e: Exception) { } // most often the case that there aren't any other entities from other modules / projects
     }
@@ -112,11 +114,24 @@ class AnnotationProcessingContext(val roundEnv: RoundEnvironment, val processing
     }
 
     fun getEntityConfigForClass(entityClass: Class<*>) : EntityConfig? {
-        return entityConfigRegistry[entityClass]
+        entityConfigRegistry[entityClass]?.let {
+            return it
+        }
+
+        return entityConfigsFromPreviousBuiltProjects[entityClass]
     }
 
     fun getEntityConfigsInOrderAdded() : List<EntityConfig> {
         return entityConfigsInOrderAdded
+    }
+
+    fun getAllReadEntityConfigs() : List<EntityConfig> {
+        val allEntityConfigs = ArrayList<EntityConfig>()
+
+        allEntityConfigs.addAll(entityConfigsFromPreviousBuiltProjects.values)
+        allEntityConfigs.addAll(getEntityConfigsInOrderAdded())
+
+        return allEntityConfigs
     }
 
     fun registerProperty(property: Property) {
