@@ -4,6 +4,7 @@ import net.dankito.jpa.apt.config.ColumnConfig
 import net.dankito.jpa.apt.config.EntityConfig
 import net.dankito.jpa.apt.config.EntityTypeInfo
 import net.dankito.jpa.apt.config.Property
+import net.dankito.jpa.apt.configurationprocessor.source.SourceCodeGeneratorEntityConfigurationProcessor
 import java.lang.reflect.Field
 import javax.annotation.processing.ProcessingEnvironment
 import javax.annotation.processing.RoundEnvironment
@@ -27,8 +28,25 @@ class AnnotationProcessingContext(val roundEnv: RoundEnvironment, val processing
 
 
     init {
+        readAlreadyCreatedEntityConfigs()
+
         categorizeElements()
         orderEntitiesByClassHierarchy()
+    }
+
+    private fun readAlreadyCreatedEntityConfigs() {
+        try {
+            val generatedEntityConfigsClass = Class.forName(SourceCodeGeneratorEntityConfigurationProcessor.GeneratedEntityConfigsPackageName + "." +
+                    SourceCodeGeneratorEntityConfigurationProcessor.GeneratedEntityConfigsClassName)
+            val generatedEntityConfigsInstance = generatedEntityConfigsClass.newInstance()
+
+            val getGeneratedEntityConfigsMethod = generatedEntityConfigsClass.getDeclaredMethod(SourceCodeGeneratorEntityConfigurationProcessor.GetGeneratedEntityConfigsMethodName)
+            val generatedEntityConfigs = getGeneratedEntityConfigsMethod.invoke(generatedEntityConfigsInstance) as List<EntityConfig>
+
+            generatedEntityConfigs.forEach { entityConfig ->
+                registerEntityConfig(entityConfig)
+            }
+        } catch(e: Exception) { } // most often the case that there aren't any other entities from other modules / projects
     }
 
     private fun categorizeElements() {
