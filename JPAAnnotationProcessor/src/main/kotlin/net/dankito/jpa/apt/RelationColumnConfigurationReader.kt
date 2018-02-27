@@ -265,8 +265,11 @@ class RelationColumnConfigurationReader {
             column.isJoinColumn = true
 
             if(joinColumn.name.isNotBlank()) {
-                joinColumnAnnotationOrNameNotSet = false
-                column.columnName = joinColumn.name
+                val annotationColumnNameValue = joinColumn.name
+                if(annotationColumnNameValue.isNotEmpty()) { // when name is not set on Annotation
+                    joinColumnAnnotationOrNameNotSet = false
+                    column.columnName = joinColumn.name
+                }
             }
 
             if(joinColumn.columnDefinition.isNotBlank()) {

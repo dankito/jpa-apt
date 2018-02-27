@@ -256,7 +256,11 @@ class ColumnConfigurationReader(private var relationColumnConfigurationReader: R
 
     private fun readColumnAnnotation(column: ColumnConfig, element: Element) {
         element.getAnnotation(Column::class.java)?.let { columnAnnotation ->
-            column.columnName = columnAnnotation.name
+            val annotationColumnNameValue = columnAnnotation.name
+            if(annotationColumnNameValue.isNotEmpty()) { // when name is not set on Annotation
+                column.columnName = annotationColumnNameValue
+            }
+
             column.tableName = columnAnnotation.table
             column.insertable = columnAnnotation.insertable
             column.updatable = columnAnnotation.updatable
