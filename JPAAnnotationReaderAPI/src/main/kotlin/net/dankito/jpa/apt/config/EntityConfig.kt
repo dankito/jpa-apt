@@ -72,6 +72,8 @@ open class EntityConfig(val entityClass: Class<*>, val constructor: Constructor<
         private set
 
 
+    private var isIdColumnSet = false
+
     private var areInheritedColumnsLoaded = false
     private var columnsIncludingInheritedOnes = LinkedHashSet<ColumnConfig>()
 
@@ -185,11 +187,21 @@ open class EntityConfig(val entityClass: Class<*>, val constructor: Constructor<
         childEntities.add(entityConfig)
 
         entityConfig.parentEntity = this
+
+        if(isIdColumnSet) {
+            setIdColumnOnChildEntitiesRecursively(idColumn)
+        }
+
+        versionColumn?.let {
+            setVersionColumnOnChildEntitiesRecursively(it)
+        }
     }
 
 
     fun setIdColumnAndSetItOnChildEntities(idColumn: ColumnConfig) {
         this.idColumn = idColumn
+
+        this.isIdColumnSet = true
 
         setIdColumnOnChildEntitiesRecursively(idColumn)
     }
