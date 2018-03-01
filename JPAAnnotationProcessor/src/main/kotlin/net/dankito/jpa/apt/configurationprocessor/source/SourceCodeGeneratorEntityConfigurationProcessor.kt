@@ -5,7 +5,6 @@ import net.dankito.jpa.apt.config.*
 import net.dankito.jpa.apt.configurationprocessor.IEntityConfigurationProcessor
 import net.dankito.jpa.apt.generated.GeneratedEntityConfigsUtil
 import net.dankito.jpa.apt.reflection.ReflectionHelper
-import java.lang.Exception
 import javax.annotation.processing.ProcessingEnvironment
 import javax.lang.model.element.Modifier
 import javax.persistence.AccessType
@@ -32,7 +31,7 @@ class SourceCodeGeneratorEntityConfigurationProcessor : IEntityConfigurationProc
 
     private fun createEntityConfigClass(entityConfig: EntityConfig, context: SourceCodeGeneratorContext, processingEnv: ProcessingEnvironment) {
         // real class name may be used twice, but a table name has to be unique in a database -> use tableName instead of entityConfig.entityClass.simpleName
-        val className = entityConfig.tableName + "EntityConfig"
+        val className = getEntityConfigClassName(entityConfig)
         val packageName = entityConfig.entityClass.`package`.name
 
         val entityClassName = ClassName.get(entityConfig.entityClass)
@@ -88,7 +87,7 @@ class SourceCodeGeneratorEntityConfigurationProcessor : IEntityConfigurationProc
 
         javaFile.writeTo(processingEnv.filer)
 
-        context.addEntityConfig(ClassName.get(packageName, className), entityConfig)
+        context.addEntityConfig(className, entityConfig)
     }
 
     private fun addCreateColumnConfigsMethod(entityClassBuilder: TypeSpec.Builder, entityConfig: EntityConfig, context: SourceCodeGeneratorContext) {
@@ -318,6 +317,9 @@ class SourceCodeGeneratorEntityConfigurationProcessor : IEntityConfigurationProc
 
         javaFile.writeTo(processingEnv.filer)
     }
+
+
+    private fun getEntityConfigClassName(entityConfig: EntityConfig) = entityConfig.tableName + "EntityConfig"
 
     fun getEntityConfigVariableName(entityConfig: EntityConfig): String {
         return getEntityConfigVariableName(ClassName.get(entityConfig.entityClass))

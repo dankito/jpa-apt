@@ -46,8 +46,20 @@ class SourceCodeGeneratorContext(entityConfiguration: JPAEntityConfiguration) {
         return entityConfigsOrderedHierarchically
     }
 
+    fun addEntityConfig(className: String, entityConfig: EntityConfig) {
+        addEntityConfig(createClassName(className, entityConfig), entityConfig)
+    }
+
     fun addEntityConfig(className: ClassName, entityConfig: EntityConfig) {
         classNamesToEntityConfigsMap.put(className, entityConfig)
+    }
+
+    fun createClassName(className: String, entityConfig: EntityConfig): ClassName {
+        return ClassName.get(entityConfig.entityClass.`package`.name, className)
+    }
+
+    fun createClassName(clazz: Class<*>): ClassName {
+        return ClassName.get(clazz.`package`.name, clazz.simpleName)
     }
 
     fun getEntityConfig(className: ClassName): EntityConfig? {
