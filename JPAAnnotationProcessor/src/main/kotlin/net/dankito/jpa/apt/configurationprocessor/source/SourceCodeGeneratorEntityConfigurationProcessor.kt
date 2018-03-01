@@ -254,9 +254,29 @@ class SourceCodeGeneratorEntityConfigurationProcessor : IEntityConfigurationProc
 
 
     private fun createEntityConfigClassesLoader(context: SourceCodeGeneratorContext, processingEnv: ProcessingEnvironment) {
-        val previousBuiltGeneratedEntityConfigs = GeneratedEntityConfigsUtil().getLastPreviouslyBuiltGeneratedEntityConfigsAndItsNumber()
+        val generatedEntityConfigsUtil = GeneratedEntityConfigsUtil()
+        val previousBuiltGeneratedEntityConfigs = generatedEntityConfigsUtil.getLastPreviouslyBuiltGeneratedEntityConfigsAndItsNumber()
         processingEnv.messager.printMessage(Diagnostic.Kind.NOTE, "Previous generated EntityConfigs: $previousBuiltGeneratedEntityConfigs")
 
+        val getGeneratedEntityConfigs = createGetGeneratedEntityConfigsMethod(context, previousBuiltGeneratedEntityConfigs, generatedEntityConfigsUtil)
+
+
+        val superClass = if(previousBuiltGeneratedEntityConfigs != null) previousBuiltGeneratedEntityConfigs.first else EntityConfig::class.java
+        val classNamePostfix = if(previousBuiltGeneratedEntityConfigs != null) (previousBuiltGeneratedEntityConfigs.second + 1).toString() else ""
+
+        val entityClass = TypeSpec.classBuilder(GeneratedEntityConfigsUtil.GeneratedEntityConfigsClassName + classNamePostfix)
+                .superclass(superClass)
+                .addModifiers(Modifier.PUBLIC)
+                .addMethod(getGeneratedEntityConfigs)
+                .build()
+
+        val javaFile = JavaFile.builder(GeneratedEntityConfigsUtil.GeneratedEntityConfigsPackageName, entityClass)
+                .build()
+
+        javaFile.writeTo(processingEnv.filer)
+    }
+
+    private fun createGetGeneratedEntityConfigsMethod(context: SourceCodeGeneratorContext, previousBuiltGeneratedEntityConfigs: Pair<Class<*>, Int>?, generatedEntityConfigsUtil: GeneratedEntityConfigsUtil): MethodSpec? {
         val entityConfigClassName = ClassName.get(EntityConfig::class.java)
         val list = ClassName.get("java.util", "List")
         val arrayList = ClassName.get("java.util", "ArrayList")
@@ -277,16 +297,7 @@ class SourceCodeGeneratorEntityConfigurationProcessor : IEntityConfigurationProc
         val entityConfigVariableNames = HashMap<EntityConfig, String>()
 
         for(entityConfig in context.getEntityConfigsOrderedHierarchically()) {
-            val className = context.getClassName(entityConfig)
-            val parentEntity = entityConfig.parentEntity
-            val parentEntityVariableName = if(parentEntity == null) "null" else getEntityConfigVariableName(context.getClassName(parentEntity))
-
-            val variableName = getEntityConfigVariableName(className)
-            entityConfigVariableNames.put(entityConfig, variableName)
-
-            addNewLine(getGeneratedEntityConfigsBuilder)
-            getGeneratedEntityConfigsBuilder.addStatement("\$T \$N = new \$T(\$N)", className, variableName, className, parentEntityVariableName)
-            getGeneratedEntityConfigsBuilder.addStatement("result.add(\$N)", variableName)
+            createEntityConfigInstantiationStatement(context, getGeneratedEntityConfigsBuilder, entityConfig, entityConfigVariableNames)
         }
 
         addNewLine(getGeneratedEntityConfigsBuilder)
@@ -300,22 +311,20 @@ class SourceCodeGeneratorEntityConfigurationProcessor : IEntityConfigurationProc
         addNewLine(getGeneratedEntityConfigsBuilder)
         getGeneratedEntityConfigsBuilder.addStatement("return result")
 
-        val getGeneratedEntityConfigs = getGeneratedEntityConfigsBuilder.build()
+        return getGeneratedEntityConfigsBuilder.build()
+    }
 
+    private fun createEntityConfigInstantiationStatement(context: SourceCodeGeneratorContext, getGeneratedEntityConfigsBuilder: MethodSpec.Builder, entityConfig: EntityConfig, entityConfigVariableNames: HashMap<EntityConfig, String>) {
+        val className = context.getClassName(entityConfig)
+        val parentEntity = entityConfig.parentEntity
+        val parentEntityVariableName = if(parentEntity == null) "null" else getEntityConfigVariableName(context.getClassName(parentEntity))
 
-        val superClass = if(previousBuiltGeneratedEntityConfigs != null) previousBuiltGeneratedEntityConfigs.first else EntityConfig::class.java
-        val classNamePostfix = if(previousBuiltGeneratedEntityConfigs != null) (previousBuiltGeneratedEntityConfigs.second + 1).toString() else ""
+        val variableName = getEntityConfigVariableName(className)
+        entityConfigVariableNames.put(entityConfig, variableName)
 
-        val entityClass = TypeSpec.classBuilder(GeneratedEntityConfigsUtil.GeneratedEntityConfigsClassName + classNamePostfix)
-                .superclass(superClass)
-                .addModifiers(Modifier.PUBLIC)
-                .addMethod(getGeneratedEntityConfigs)
-                .build()
-
-        val javaFile = JavaFile.builder(GeneratedEntityConfigsUtil.GeneratedEntityConfigsPackageName, entityClass)
-                .build()
-
-        javaFile.writeTo(processingEnv.filer)
+        addNewLine(getGeneratedEntityConfigsBuilder)
+        getGeneratedEntityConfigsBuilder.addStatement("\$T \$N = new \$T(\$N)", className, variableName, className, parentEntityVariableName)
+        getGeneratedEntityConfigsBuilder.addStatement("result.add(\$N)", variableName)
     }
 
 
