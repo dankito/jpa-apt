@@ -27,6 +27,8 @@ class PreviousBuiltGeneratedEntityConfigExistsTest : AbstractProcessorTest() {
         val classNames = listOf("inheritance_annotations/${childClass.simpleName}.java")
 
         process(classNames)
+
+        // cannot test generated files as generated files are not visible to the JVM
     }
 
 
