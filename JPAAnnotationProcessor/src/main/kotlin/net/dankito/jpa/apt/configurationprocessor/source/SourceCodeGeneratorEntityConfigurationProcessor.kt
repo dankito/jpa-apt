@@ -12,6 +12,7 @@ import javax.persistence.AccessType
 import javax.persistence.CascadeType
 import javax.persistence.FetchType
 import javax.persistence.GenerationType
+import javax.tools.Diagnostic
 
 
 class SourceCodeGeneratorEntityConfigurationProcessor : IEntityConfigurationProcessor {
@@ -25,6 +26,7 @@ class SourceCodeGeneratorEntityConfigurationProcessor : IEntityConfigurationProc
     }
 
     private fun createEntityConfigClasses(context: SourceCodeGeneratorContext, processingEnv: ProcessingEnvironment) {
+        processingEnv.messager.printMessage(Diagnostic.Kind.NOTE, "Processing EntityConfigs: ${context.getEntityConfigsOrderedHierarchically()}")
         context.getEntityConfigsOrderedHierarchically().forEach { createEntityConfigClass(it, context, processingEnv) }
     }
 
@@ -254,6 +256,7 @@ class SourceCodeGeneratorEntityConfigurationProcessor : IEntityConfigurationProc
 
     private fun createEntityConfigClassesLoader(context: SourceCodeGeneratorContext, processingEnv: ProcessingEnvironment) {
         val previousBuiltGeneratedEntityConfigs = GeneratedEntityConfigsUtil().getLastPreviouslyBuiltGeneratedEntityConfigsAndItsNumber()
+        processingEnv.messager.printMessage(Diagnostic.Kind.NOTE, "Previous generated EntityConfigs: $previousBuiltGeneratedEntityConfigs")
 
         val entityConfigClassName = ClassName.get(EntityConfig::class.java)
         val list = ClassName.get("java.util", "List")

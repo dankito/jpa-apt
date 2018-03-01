@@ -17,7 +17,13 @@ class SourceCodeGeneratorContext(entityConfiguration: JPAEntityConfiguration) {
     init {
         entityConfigsOrderedHierarchically.addAll(entityConfiguration.entities.filter { it.parentEntity == null })
 
-        addChildrenRecursively(entityConfigsOrderedHierarchically, entityConfigsOrderedHierarchically.toList() /* make a copy */)
+        if(entityConfigsOrderedHierarchically.isNotEmpty()) {
+            addChildrenRecursively(entityConfigsOrderedHierarchically, entityConfigsOrderedHierarchically.toList() /* make a copy */)
+        }
+        else { // all entities have a parent entity -> now we have a little problem as we cannot resolve hierarchy easily
+            // TODO: implement algorithm to order also these EntityConfigs hierarchically
+            entityConfigsOrderedHierarchically.addAll(entityConfiguration.entities) // -> last resort: add all, parent got already added by previous built GeneratedEntityConfigs
+        }
     }
 
     private fun addChildrenRecursively(sortedList: LinkedHashSet<EntityConfig>, entityConfigsFromLastRound: Collection<EntityConfig>) {
