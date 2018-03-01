@@ -14,7 +14,9 @@
 package net.dankito.jpa.apt.util
 
 import net.dankito.jpa.apt.JPAAnnotationProcessor
+import org.junit.After
 import org.junit.Assert
+import org.junit.Before
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.IOException
@@ -38,20 +40,27 @@ abstract class AbstractProcessorTest {
     protected val fileUtil = FileUtil()
 
 
+    @Before
+    open fun setUp() {
+        fileUtil.deleteFolderAndItsContent(getGeneratedFilesBaseFolder())
+    }
+
+    @After
+    open fun tearDown() {
+        fileUtil.deleteFolderAndItsContent(getGeneratedFilesBaseFolder())
+    }
+
+
     @Throws(IOException::class)
-    protected fun process(classNames: List<String>, deleteGeneratedFilesFolder: Boolean = true) {
+    protected fun process(classNames: List<String>) {
         val sourceFiles = createSourceFileList(*classNames.toTypedArray())
 
-        process(JPAAnnotationProcessor::class.java, sourceFiles, OutputDirectoryName, deleteGeneratedFilesFolder)
+        process(JPAAnnotationProcessor::class.java, sourceFiles, OutputDirectoryName)
     }
 
     @Throws(IOException::class)
-    protected fun process(processorClass: Class<out AbstractProcessor>, classes: List<String>, target: String, deleteGeneratedFilesFolder: Boolean = true) {
+    protected fun process(processorClass: Class<out AbstractProcessor>, classes: List<String>, target: String) {
         val out = File("build/" + target)
-
-        if(deleteGeneratedFilesFolder) {
-            fileUtil.deleteFolderAndItsContent(out)
-        }
 
         if (!out.mkdirs()) {
             //            Assert.fail("Creation of " + out.getPath() + " failed");
@@ -101,6 +110,10 @@ abstract class AbstractProcessorTest {
 
     protected fun createSourceFileList(vararg classNames: String): List<String> {
         return classNames.map { File(testEntitiesPath, it) }.map { it.path }
+    }
+
+    protected open fun getGeneratedFilesBaseFolder(): File {
+        return File("build", "generated") // TODO: make generic
     }
 
 }
