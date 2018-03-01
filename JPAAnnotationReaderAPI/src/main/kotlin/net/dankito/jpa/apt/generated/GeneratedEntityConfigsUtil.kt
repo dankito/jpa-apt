@@ -1,5 +1,7 @@
 package net.dankito.jpa.apt.generated
 
+import net.dankito.jpa.apt.config.EntityConfig
+
 
 open class GeneratedEntityConfigsUtil {
 
@@ -33,6 +35,19 @@ open class GeneratedEntityConfigsUtil {
                 return Pair(lastGeneratedEntityConfigsClass, countGeneratedEntityConfigs)
             }
         } catch(e: Exception) { } // most often the case that there aren't any other entities from other modules / projects
+
+        return null
+    }
+
+
+    open fun generatedEntityConfigs(): List<EntityConfig>? {
+        getLastPreviouslyBuiltGeneratedEntityConfigsAndItsNumber()?.let {
+            val generatedEntityConfigsClass = it.first
+            val generatedEntityConfigsInstance = generatedEntityConfigsClass.newInstance()
+
+            val getGeneratedEntityConfigsMethod = generatedEntityConfigsClass.getDeclaredMethod(GeneratedEntityConfigsUtil.GetGeneratedEntityConfigsMethodName)
+            return getGeneratedEntityConfigsMethod.invoke(generatedEntityConfigsInstance) as List<EntityConfig>
+        }
 
         return null
     }
