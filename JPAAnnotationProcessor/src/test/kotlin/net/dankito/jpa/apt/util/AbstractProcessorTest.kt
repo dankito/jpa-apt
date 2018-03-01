@@ -37,16 +37,20 @@ abstract class AbstractProcessorTest {
 
 
     @Throws(IOException::class)
-    protected fun process(classNames: List<String>) {
+    protected fun process(classNames: List<String>, deleteGeneratedFilesFolder: Boolean = true) {
         val sourceFiles = createSourceFileList(*classNames.toTypedArray())
 
-        process(JPAAnnotationProcessor::class.java, sourceFiles, OutputDirectoryName)
+        process(JPAAnnotationProcessor::class.java, sourceFiles, OutputDirectoryName, deleteGeneratedFilesFolder)
     }
 
     @Throws(IOException::class)
-    protected fun process(processorClass: Class<out AbstractProcessor>, classes: List<String>, target: String) {
+    protected fun process(processorClass: Class<out AbstractProcessor>, classes: List<String>, target: String, deleteGeneratedFilesFolder: Boolean = true) {
         val out = File("build/" + target)
-        deleteFile(out)
+
+        if(deleteGeneratedFilesFolder) {
+            deleteFile(out)
+        }
+
         if (!out.mkdirs()) {
             //            Assert.fail("Creation of " + out.getPath() + " failed");
         }
