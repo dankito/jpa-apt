@@ -35,6 +35,8 @@ abstract class AbstractProcessorTest {
 
     private val compiler = SimpleCompiler()
 
+    protected val fileUtil = FileUtil()
+
 
     @Throws(IOException::class)
     protected fun process(classNames: List<String>, deleteGeneratedFilesFolder: Boolean = true) {
@@ -48,7 +50,7 @@ abstract class AbstractProcessorTest {
         val out = File("build/" + target)
 
         if(deleteGeneratedFilesFolder) {
-            deleteFile(out)
+            fileUtil.deleteFolderAndItsContent(out)
         }
 
         if (!out.mkdirs()) {
@@ -84,16 +86,6 @@ abstract class AbstractProcessorTest {
     protected val aptOptions: Collection<String>
         get() = emptyList()
 
-
-    protected fun deleteFile(file: File) {
-        if (file.isDirectory == false) {
-            file.delete()
-        } else {
-            for (directoryEntry in file.listFiles()!!) {
-                deleteFile(directoryEntry)
-            }
-        }
-    }
 
     protected fun getFiles(path: String): List<String> {
         val classes = ArrayList<String>()
