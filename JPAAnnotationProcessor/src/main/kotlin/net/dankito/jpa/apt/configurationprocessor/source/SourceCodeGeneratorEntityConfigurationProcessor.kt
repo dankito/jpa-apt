@@ -3,6 +3,7 @@ package net.dankito.jpa.apt.configurationprocessor.source
 import com.squareup.javapoet.*
 import net.dankito.jpa.apt.config.*
 import net.dankito.jpa.apt.configurationprocessor.IEntityConfigurationProcessor
+import net.dankito.jpa.apt.generated.GeneratedEntityConfigsUtil
 import net.dankito.jpa.apt.reflection.ReflectionHelper
 import java.lang.Exception
 import javax.annotation.processing.ProcessingEnvironment
@@ -14,14 +15,6 @@ import javax.persistence.GenerationType
 
 
 class SourceCodeGeneratorEntityConfigurationProcessor : IEntityConfigurationProcessor {
-
-    companion object {
-        const val GeneratedEntityConfigsPackageName = "net.dankito.jpa.apt.generated"
-
-        const val GeneratedEntityConfigsClassName = "GeneratedEntityConfigs"
-
-        const val GetGeneratedEntityConfigsMethodName = "getGeneratedEntityConfigs"
-    }
 
     override fun processConfiguration(entityConfiguration: JPAEntityConfiguration, processingEnv: ProcessingEnvironment) {
         val context = SourceCodeGeneratorContext(entityConfiguration)
@@ -260,19 +253,24 @@ class SourceCodeGeneratorEntityConfigurationProcessor : IEntityConfigurationProc
 
 
     private fun createEntityConfigClassesLoader(context: SourceCodeGeneratorContext, processingEnv: ProcessingEnvironment) {
-        val generatedEntityConfigsClassName = GeneratedEntityConfigsClassName
-        val generatedEntityConfigsPackageName = GeneratedEntityConfigsPackageName
+        val previousBuiltGeneratedEntityConfigs = GeneratedEntityConfigsUtil().getLastPreviouslyBuiltGeneratedEntityConfigsAndItsNumber()
 
         val entityConfigClassName = ClassName.get(EntityConfig::class.java)
         val list = ClassName.get("java.util", "List")
         val arrayList = ClassName.get("java.util", "ArrayList")
         val listOfEntityConfigs = ParameterizedTypeName.get(list, entityConfigClassName)
 
-        val getGeneratedEntityConfigsBuilder = MethodSpec.methodBuilder(GetGeneratedEntityConfigsMethodName) // TODO: extract to globally readable constants in API project
+        val getGeneratedEntityConfigsBuilder = MethodSpec.methodBuilder(GeneratedEntityConfigsUtil.GetGeneratedEntityConfigsMethodName)
                 .addModifiers(Modifier.PUBLIC)
                 .addException(Exception::class.java)
                 .returns(listOfEntityConfigs)
-                .addStatement("\$T result = new \$T<>()", listOfEntityConfigs, arrayList)
+
+        if(previousBuiltGeneratedEntityConfigs != null) {
+            getGeneratedEntityConfigsBuilder.addStatement("\$T result = super.${GeneratedEntityConfigsUtil.GetGeneratedEntityConfigsMethodName}()", listOfEntityConfigs)
+        }
+        else {
+            getGeneratedEntityConfigsBuilder.addStatement("\$T result = new \$T<>()", listOfEntityConfigs, arrayList)
+        }
 
         val entityConfigVariableNames = HashMap<EntityConfig, String>()
 
@@ -303,13 +301,16 @@ class SourceCodeGeneratorEntityConfigurationProcessor : IEntityConfigurationProc
         val getGeneratedEntityConfigs = getGeneratedEntityConfigsBuilder.build()
 
 
-        val entityClass = TypeSpec.classBuilder(generatedEntityConfigsClassName)
-                .superclass(EntityConfig::class.java)
+        val superClass = if(previousBuiltGeneratedEntityConfigs != null) previousBuiltGeneratedEntityConfigs.first else EntityConfig::class.java
+        val classNamePostfix = if(previousBuiltGeneratedEntityConfigs != null) (previousBuiltGeneratedEntityConfigs.second + 1).toString() else ""
+
+        val entityClass = TypeSpec.classBuilder(GeneratedEntityConfigsUtil.GeneratedEntityConfigsClassName + classNamePostfix)
+                .superclass(superClass)
                 .addModifiers(Modifier.PUBLIC)
                 .addMethod(getGeneratedEntityConfigs)
                 .build()
 
-        val javaFile = JavaFile.builder(generatedEntityConfigsPackageName, entityClass)
+        val javaFile = JavaFile.builder(GeneratedEntityConfigsUtil.GeneratedEntityConfigsPackageName, entityClass)
                 .build()
 
         javaFile.writeTo(processingEnv.filer)
