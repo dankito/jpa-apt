@@ -11,6 +11,8 @@ open class GeneratedEntityConfigsUtil {
         const val GeneratedEntityConfigsClassName = "GeneratedEntityConfigs"
 
         const val GetGeneratedEntityConfigsMethodName = "getGeneratedEntityConfigs"
+
+        const val GetEntityConfigMethodName = "getEntityConfig"
     }
 
 
@@ -40,16 +42,20 @@ open class GeneratedEntityConfigsUtil {
     }
 
 
-    open fun generatedEntityConfigs(): List<EntityConfig>? {
+    open fun getGeneratedEntityConfigs(): List<EntityConfig>? {
         getLastPreviouslyBuiltGeneratedEntityConfigsAndItsNumber()?.let {
-            val generatedEntityConfigsClass = it.first
-            val generatedEntityConfigsInstance = generatedEntityConfigsClass.newInstance()
-
-            val getGeneratedEntityConfigsMethod = generatedEntityConfigsClass.getDeclaredMethod(GeneratedEntityConfigsUtil.GetGeneratedEntityConfigsMethodName)
-            return getGeneratedEntityConfigsMethod.invoke(generatedEntityConfigsInstance) as List<EntityConfig>
+            return getGeneratedEntityConfigs(it.first)
         }
 
         return null
+    }
+
+    open fun getGeneratedEntityConfigs(generatedEntityConfigsClass: Class<*>): List<EntityConfig> {
+        val generatedEntityConfigsInstance = generatedEntityConfigsClass.newInstance()
+
+        val getGeneratedEntityConfigsMethod = generatedEntityConfigsClass.getDeclaredMethod(GeneratedEntityConfigsUtil.GetGeneratedEntityConfigsMethodName)
+
+        return getGeneratedEntityConfigsMethod.invoke(generatedEntityConfigsInstance) as List<EntityConfig>
     }
 
 }

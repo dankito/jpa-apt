@@ -68,7 +68,7 @@ class SourceCodeGeneratorContext(entityConfiguration: JPAEntityConfiguration) {
 
     fun getClassName(entityConfig: EntityConfig): ClassName? {
         classNamesToEntityConfigsMap.entries.forEach {
-            if(it.value == entityConfig) {
+            if(it.value.entityClass == entityConfig.entityClass) {
                 return it.key
             }
         }

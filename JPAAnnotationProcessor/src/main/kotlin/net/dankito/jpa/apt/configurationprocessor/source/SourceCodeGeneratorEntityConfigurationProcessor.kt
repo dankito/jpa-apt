@@ -264,11 +264,16 @@ class SourceCodeGeneratorEntityConfigurationProcessor : IEntityConfigurationProc
         val superClass = if(previousBuiltGeneratedEntityConfigs != null) previousBuiltGeneratedEntityConfigs.first else EntityConfig::class.java
         val classNamePostfix = if(previousBuiltGeneratedEntityConfigs != null) (previousBuiltGeneratedEntityConfigs.second + 1).toString() else ""
 
-        val entityClass = TypeSpec.classBuilder(GeneratedEntityConfigsUtil.GeneratedEntityConfigsClassName + classNamePostfix)
+        val entityClassBuilder = TypeSpec.classBuilder(GeneratedEntityConfigsUtil.GeneratedEntityConfigsClassName + classNamePostfix)
                 .superclass(superClass)
                 .addModifiers(Modifier.PUBLIC)
                 .addMethod(getGeneratedEntityConfigs)
-                .build()
+
+        if(previousBuiltGeneratedEntityConfigs != null && previousBuiltGeneratedEntityConfigs.second == 1) {
+            entityClassBuilder.addMethod(createGetEntityConfigMethod(context))
+        }
+
+        val entityClass = entityClassBuilder.build()
 
         val javaFile = JavaFile.builder(GeneratedEntityConfigsUtil.GeneratedEntityConfigsPackageName, entityClass)
                 .build()
@@ -276,7 +281,9 @@ class SourceCodeGeneratorEntityConfigurationProcessor : IEntityConfigurationProc
         javaFile.writeTo(processingEnv.filer)
     }
 
-    private fun createGetGeneratedEntityConfigsMethod(context: SourceCodeGeneratorContext, previousBuiltGeneratedEntityConfigs: Pair<Class<*>, Int>?, generatedEntityConfigsUtil: GeneratedEntityConfigsUtil): MethodSpec? {
+    private fun createGetGeneratedEntityConfigsMethod(context: SourceCodeGeneratorContext, previousBuiltGeneratedEntityConfigs: Pair<Class<*>, Int>?,
+                                                      generatedEntityConfigsUtil: GeneratedEntityConfigsUtil): MethodSpec? {
+        val resultVariableName = "result"
         val entityConfigClassName = ClassName.get(EntityConfig::class.java)
         val list = ClassName.get("java.util", "List")
         val arrayList = ClassName.get("java.util", "ArrayList")
@@ -288,10 +295,12 @@ class SourceCodeGeneratorEntityConfigurationProcessor : IEntityConfigurationProc
                 .returns(listOfEntityConfigs)
 
         if(previousBuiltGeneratedEntityConfigs != null) {
-            getGeneratedEntityConfigsBuilder.addStatement("\$T result = super.${GeneratedEntityConfigsUtil.GetGeneratedEntityConfigsMethodName}()", listOfEntityConfigs)
+            getGeneratedEntityConfigsBuilder.addStatement("\$T \$N = super.${GeneratedEntityConfigsUtil.GetGeneratedEntityConfigsMethodName}()", listOfEntityConfigs, resultVariableName)
+
+            addPreviousGeneratedEntityConfigs(context, getGeneratedEntityConfigsBuilder, previousBuiltGeneratedEntityConfigs.first, generatedEntityConfigsUtil, resultVariableName)
         }
         else {
-            getGeneratedEntityConfigsBuilder.addStatement("\$T result = new \$T<>()", listOfEntityConfigs, arrayList)
+            getGeneratedEntityConfigsBuilder.addStatement("\$T \$N = new \$T<>()", listOfEntityConfigs, resultVariableName, arrayList)
         }
 
         val entityConfigVariableNames = HashMap<EntityConfig, String>()
@@ -309,7 +318,7 @@ class SourceCodeGeneratorEntityConfigurationProcessor : IEntityConfigurationProc
         }
 
         addNewLine(getGeneratedEntityConfigsBuilder)
-        getGeneratedEntityConfigsBuilder.addStatement("return result")
+        getGeneratedEntityConfigsBuilder.addStatement("return \$N", resultVariableName)
 
         return getGeneratedEntityConfigsBuilder.build()
     }
@@ -328,6 +337,37 @@ class SourceCodeGeneratorEntityConfigurationProcessor : IEntityConfigurationProc
     }
 
 
+    private fun createGetEntityConfigMethod(context: SourceCodeGeneratorContext): MethodSpec {
+        val entityConfigsParameterName = "entityConfigs"
+        val entityClassParameterName = "entityClass"
+        val entityConfigLoopVariableName = "config"
+
+        val entityConfigClassName = ClassName.get(EntityConfig::class.java)
+        val list = ClassName.get("java.util", "List")
+        val listOfEntityConfigs = ParameterizedTypeName.get(list, entityConfigClassName)
+
+        val getEntityConfigBuilder = MethodSpec.methodBuilder(GeneratedEntityConfigsUtil.GetEntityConfigMethodName)
+                .addModifiers(Modifier.PUBLIC)
+                .addParameter(listOfEntityConfigs, entityConfigsParameterName)
+                .addParameter(Class::class.java, entityClassParameterName)
+                .returns(EntityConfig::class.java)
+
+        getEntityConfigBuilder.beginControlFlow("for(\$T \$N : \$N)", EntityConfig::class.java, entityConfigLoopVariableName, entityConfigsParameterName)
+
+        getEntityConfigBuilder.beginControlFlow("if(\$N.getEntityClass() == \$N)", entityConfigLoopVariableName, entityClassParameterName)
+
+        getEntityConfigBuilder.addStatement("return \$N", entityConfigLoopVariableName)
+
+        getEntityConfigBuilder.endControlFlow()
+
+        getEntityConfigBuilder.endControlFlow()
+
+        getEntityConfigBuilder.addStatement("return null")
+
+        return getEntityConfigBuilder.build()
+    }
+
+
     private fun getEntityConfigClassName(entityConfig: EntityConfig) = entityConfig.tableName + "EntityConfig"
 
     fun getEntityConfigVariableName(entityConfig: EntityConfig): String {
@@ -340,6 +380,22 @@ class SourceCodeGeneratorEntityConfigurationProcessor : IEntityConfigurationProc
         }
 
         return "null"
+    }
+
+    private fun addPreviousGeneratedEntityConfigs(context: SourceCodeGeneratorContext, generatedEntityConfigsBuilder: MethodSpec.Builder, generatedEntityConfigsClass: Class<*>,
+                                                  generatedEntityConfigsUtil: GeneratedEntityConfigsUtil, resultVariableName: String) {
+        val previousEntityConfigs = generatedEntityConfigsUtil.getGeneratedEntityConfigs(generatedEntityConfigsClass)
+        val getEntityConfigMethodName = GeneratedEntityConfigsUtil.GetEntityConfigMethodName
+
+        previousEntityConfigs.forEach { entityConfig ->
+            context.addEntityConfig(getEntityConfigClassName(entityConfig), entityConfig)
+            addNewLine(generatedEntityConfigsBuilder)
+
+            val className = context.getClassName(entityConfig)
+            val variableName = getEntityConfigVariableName(context.getClassName(entityConfig))
+            generatedEntityConfigsBuilder.addStatement("\$T \$N = (\$T) $getEntityConfigMethodName(\$N, \$T.class)", className, variableName, className, resultVariableName,
+                    context.createClassName(entityConfig.entityClass))
+        }
     }
 
     private fun addNewLine(methodBuilder: MethodSpec.Builder) {
