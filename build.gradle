@@ -38,5 +38,5 @@ allprojects {
 
 subprojects {
     group 'net.dankito.jpa.annotationreader'
-    version '1.0-alpha3'
+    version '1.0-alpha4-SNAPSHOT'
 }
