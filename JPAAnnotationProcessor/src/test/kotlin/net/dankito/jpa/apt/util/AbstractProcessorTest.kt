@@ -13,10 +13,8 @@
  */
 package net.dankito.jpa.apt.util
 
-import net.dankito.jpa.apt.JPAAnnotationProcessor
-import org.junit.After
+//import net.dankito.jpa.apt.generated.GeneratedEntityConfigs
 import org.junit.Assert
-import org.junit.Before
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.IOException
@@ -40,22 +38,25 @@ abstract class AbstractProcessorTest {
     protected val fileUtil = FileUtil()
 
 
-    @Before
-    open fun setUp() {
-        fileUtil.deleteFolderAndItsContent(getGeneratedFilesBaseFolder())
-    }
+//    @Before
+//    open fun setUp() {
+//        fileUtil.deleteFolderAndItsContent(getGeneratedFilesBaseFolder())
+//    }
 
-    @After
-    open fun tearDown() {
-        fileUtil.deleteFolderAndItsContent(getGeneratedFilesBaseFolder())
-    }
+//    @After
+//    open fun tearDown() {
+//        fileUtil.deleteFolderAndItsContent(getGeneratedFilesBaseFolder())
+//    }
 
 
     @Throws(IOException::class)
     protected fun process(classNames: List<String>) {
         val sourceFiles = createSourceFileList(*classNames.toTypedArray())
 
-        process(JPAAnnotationProcessor::class.java, sourceFiles, OutputDirectoryName)
+        process(net.dankito.jpa.apt.reflectionfree.JPAAnnotationProcessor::class.java, sourceFiles, OutputDirectoryName)
+
+//        val generatedEntityConfigs = GeneratedEntityConfigs().getGeneratedEntityConfigs()
+//        if(generatedEntityConfigs != null) { }
     }
 
     @Throws(IOException::class)

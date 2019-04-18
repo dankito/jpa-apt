@@ -38,7 +38,10 @@ class SourceCodeGeneratorEntityConfigurationProcessor : IEntityConfigurationProc
 
         val entityClassBuilder = TypeSpec.classBuilder(className)
                 .superclass(EntityConfig::class.java)
-                .addModifiers(Modifier.PUBLIC, Modifier.FINAL)
+                .addModifiers(Modifier.PUBLIC, Modifier.FINAL) // TODO: why final
+                // TODO: get rid of ReflectionHelper:
+                //  - implement makeAccessible() internally
+                //  - only call for private/protected methods and fields to not use unnecessary Reflection
                 .addField(ReflectionHelper::class.java, "reflectionHelper", Modifier.PRIVATE)
 
         val constructorBuilder = MethodSpec.constructorBuilder()
@@ -50,7 +53,7 @@ class SourceCodeGeneratorEntityConfigurationProcessor : IEntityConfigurationProc
                 .addCode(System.lineSeparator())
 
                 .addStatement("reflectionHelper = new \$T()", ReflectionHelper::class.java)
-                .addStatement("reflectionHelper.makeAccessible(this.getConstructor())")
+                .addStatement("reflectionHelper.makeAccessible(reflectionHelper.findNoArgConstructor(\$T.class))", entityClassName)
                 .addCode(System.lineSeparator())
 
                 .beginControlFlow("if(\$N != null)", "parentEntity")

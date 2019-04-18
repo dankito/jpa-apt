@@ -13,6 +13,10 @@ apply plugin: 'io.codearte.nexus-staging'
 
 sourceCompatibility = 1.7
 
+compileKotlin.kotlinOptions.jvmTarget = "1.6"
+
+compileTestKotlin.kotlinOptions.jvmTarget = "1.6"
+
 
 
 dependencies {
