@@ -51,6 +51,15 @@ class JPAAnnotationProcessor : AbstractProcessor() {
 
         val entityConfiguration = createResult(reader)
 
+        // TODO: remove again
+        reader.logInfo("Found ${entityConfiguration.entities.size} entities:")
+        entityConfiguration.entities.forEach { entityConfig ->
+            reader.logInfo(entityConfig.type.qualifiedName)
+        }
+
+//        EntitiesWithLazyLoadingPropertiesSourceCodeGenerator()
+//                .createEntitiesWithLazyLoadingPropertiesSubClasses(entityConfiguration, processingEnv)
+
         SourceCodeGeneratorEntityConfigurationProcessor().processConfiguration(entityConfiguration, processingEnv)
     }
 

@@ -243,20 +243,15 @@ class SourceCodeGeneratorEntityConfigurationProcessor : IEntityConfigurationProc
 
     private fun createCreateAptMethodParametersCode(method: Method): CodeBlock {
 
-        return if (method.hasNoParameters()) {
-            CodeBlock.of("new \$T<>()", ClassName.get(ArrayList::class.java))
-        }
-        else {
-            val builder = CodeBlock.builder()
-                    .add("\$T.asList(", ClassName.get(Arrays::class.java))
+        val builder = CodeBlock.builder()
+                .add("\$T.<\$T>asList(", ClassName.get(Arrays::class.java), ClassName.get(Type::class.java))
 
-            method.parameters.forEach { parameter ->
-                builder.add(createCreateAptTypeCode(parameter))
-            }
-
-            builder.add(")")
-                    .build()
+        method.parameters.forEach { parameter ->
+            builder.add(createCreateAptTypeCode(parameter))
         }
+
+        return builder.add(")")
+                .build()
     }
 
     private fun addLifeCycleMethods(entityClassBuilder: TypeSpec.Builder, constructorBuilder: MethodSpec.Builder, entityConfig: EntityConfig) {
