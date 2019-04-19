@@ -218,13 +218,17 @@ class SourceCodeGeneratorEntityConfigurationProcessor : IEntityConfigurationProc
     }
 
     private fun createCreateAptTypeCode(type: Type): CodeBlock {
+        val typeClassName = ClassName.get(Type::class.java)
+
         var className = type.className
         if(className == "[B") { // Kotlin ByteArray states itself as "[B"
             className = "byte[]"
         }
 
-        return CodeBlock.of("new \$T(\$S, \$S, \$S)",
-                ClassName.get(Type::class.java), className, type.packageName, type.qualifiedName)
+        return CodeBlock.of("new \$T(\$S, \$S, \$S, \$T.<\$T>emptyList(), \$L)",
+                typeClassName, className, type.packageName, type.qualifiedName,
+                ClassName.get(Collections::class.java), typeClassName, type.isEnum
+        )
     }
 
     private fun createCreateAptMethodCode(method: Method?): CodeBlock {
