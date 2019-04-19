@@ -339,7 +339,9 @@ open class EntityConfig(val type: Type) {
             loadColumnsIncludingInheritedOnes(parentEntity)
         }
 
-        collectionToAddTo.addAll(entityConfig.columns.filter { it.cascade.contains(cascadeType) })
+        collectionToAddTo.addAll(entityConfig.columns.filter {
+            it.cascade.contains(cascadeType) || it.cascade.contains(CascadeType.ALL)
+        })
     }
 
 
