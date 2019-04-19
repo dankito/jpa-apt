@@ -5,6 +5,7 @@ import net.dankito.jpa.apt.config.*
 import net.dankito.jpa.apt.configurationprocessor.IEntityConfigurationProcessor
 import net.dankito.jpa.apt.generated.GeneratedEntityConfigsUtil
 import net.dankito.jpa.apt.reflection.ReflectionHelper
+import java.util.*
 import javax.annotation.processing.ProcessingEnvironment
 import javax.lang.model.element.Modifier
 import javax.persistence.AccessType
@@ -32,9 +33,10 @@ class SourceCodeGeneratorEntityConfigurationProcessor : IEntityConfigurationProc
     private fun createEntityConfigClass(entityConfig: EntityConfig, context: SourceCodeGeneratorContext, processingEnv: ProcessingEnvironment) {
         // real class name may be used twice, but a table name has to be unique in a database -> use tableName instead of entityConfig.entityClass.simpleName
         val className = getEntityConfigClassName(entityConfig)
-        val packageName = entityConfig.entityClass.`package`.name
+        val type = entityConfig.type
+        val packageName = type.packageName
 
-        val entityClassName = ClassName.get(entityConfig.entityClass)
+        val entityClassName = ClassName.get(packageName, type.className)
 
         val entityClassBuilder = TypeSpec.classBuilder(className)
                 .superclass(EntityConfig::class.java)
@@ -49,7 +51,7 @@ class SourceCodeGeneratorEntityConfigurationProcessor : IEntityConfigurationProc
                 .addException(Exception::class.java)
                 .addParameter(EntityConfig::class.java, "parentEntity")
 
-                .addStatement("super(\$T.class)", entityClassName)
+                .addStatement("super(\$L)", createCreateAptTypeCode(type))
                 .addCode(System.lineSeparator())
 
                 .addStatement("reflectionHelper = new \$T()", ReflectionHelper::class.java)
@@ -140,22 +142,9 @@ class SourceCodeGeneratorEntityConfigurationProcessor : IEntityConfigurationProc
 
     private fun addCreateColumnConfigMethod(createColumnConfigMethodName: String, columnConfigName: ClassName, entityClassBuilder: TypeSpec.Builder, columnConfig: ColumnConfig) {
         val property = columnConfig.property
-        val createGetterStatement = if(property.getter == null) {
-            "null"
-        }
-        else {
-            "this.getEntityClass().getDeclaredMethod(\"" + property.getter?.name + "\")"
-        }
-        val createSetterStatement = if(property.setter == null) {
-            "null"
-        }
-        else {
-            var parameterType = property.field.type.name
-            if(parameterType == "[B") { // Kotlin ByteArray states itself as "[B"
-                parameterType = "byte[]"
-            }
-            "this.getEntityClass().getDeclaredMethod(\"" + property.setter?.name + "\", " + parameterType + ".class)"
-        }
+
+        val createGetterStatement = createCreateAptMethodCode(property.getter)
+        val createSetterStatement = createCreateAptMethodCode(property.setter)
 
         val createColumnConfigMethodBuilder = MethodSpec.methodBuilder(createColumnConfigMethodName)
                 .addModifiers(Modifier.PRIVATE)
@@ -163,8 +152,18 @@ class SourceCodeGeneratorEntityConfigurationProcessor : IEntityConfigurationProc
                 .addParameter(EntityConfig::class.java, "targetEntity")
                 .returns(ColumnConfig::class.java)
 
-                .addStatement("\$T column = new \$T(this, new \$T(this.getEntityClass().getDeclaredField(\$S), \$L, \$L))", columnConfigName, columnConfigName,
-                        ClassName.get(Property::class.java), property.field.name, createGetterStatement, createSetterStatement)
+                .addCode(CodeBlock.builder()
+                        .add("\$T column = new \$T(this, \$Wnew \$T(new \$T(\$S, ",
+                                columnConfigName, columnConfigName, ClassName.get(Property::class.java),
+                                ClassName.get(Field::class.java), property.field.name)
+                        .add(createCreateAptTypeCode(property.field.type))
+                        .add("), \$W")
+                        .add(createGetterStatement)
+                        .add(", \$W")
+                        .add(createSetterStatement)
+                        .add("));")
+                        .build())
+                .addCode(System.lineSeparator())
                 .addStatement("reflectionHelper.makeAccessible(column.getProperty())")
                 .addCode(System.lineSeparator())
 
@@ -218,6 +217,48 @@ class SourceCodeGeneratorEntityConfigurationProcessor : IEntityConfigurationProc
         entityClassBuilder.addMethod(createColumnConfigMethodBuilder.build())
     }
 
+    private fun createCreateAptTypeCode(type: Type): CodeBlock {
+        var className = type.className
+        if(className == "[B") { // Kotlin ByteArray states itself as "[B"
+            className = "byte[]"
+        }
+
+        return CodeBlock.of("new \$T(\$S, \$S, \$S)",
+                ClassName.get(Type::class.java), className, type.packageName, type.qualifiedName)
+    }
+
+    private fun createCreateAptMethodCode(method: Method?): CodeBlock {
+        val methodClassName = ClassName.get(Method::class.java)
+
+        return if (method == null) {
+            CodeBlock.of("null")
+        } else {
+            CodeBlock.builder()
+                    .add("new \$T(\$S, ", methodClassName, method.name)
+                    .add(createCreateAptTypeCode(method.returnType))
+                    .add(", \$L)", createCreateAptMethodParametersCode(method))
+                    .build()
+        }
+    }
+
+    private fun createCreateAptMethodParametersCode(method: Method): CodeBlock {
+
+        return if (method.hasNoParameters()) {
+            CodeBlock.of("new \$T<>()", ClassName.get(ArrayList::class.java))
+        }
+        else {
+            val builder = CodeBlock.builder()
+                    .add("\$T.asList(", ClassName.get(Arrays::class.java))
+
+            method.parameters.forEach { parameter ->
+                builder.add(createCreateAptTypeCode(parameter))
+            }
+
+            builder.add(")")
+                    .build()
+        }
+    }
+
     private fun addLifeCycleMethods(entityClassBuilder: TypeSpec.Builder, constructorBuilder: MethodSpec.Builder, entityConfig: EntityConfig) {
         // TODO: make life cycle methods accessible
 
@@ -226,28 +267,28 @@ class SourceCodeGeneratorEntityConfigurationProcessor : IEntityConfigurationProc
                 .addException(NoSuchMethodException::class.java)
 
         entityConfig.prePersistLifeCycleMethods.forEach {
-            addLifeCycleMethodsBuilder.addStatement("addPrePersistLifeCycleMethod(this.getEntityClass().getDeclaredMethod(\"" + it.name + "\"))")
+            addLifeCycleMethodsBuilder.addStatement("addPrePersistLifeCycleMethod(\$L)", createCreateAptMethodCode(it))
         }
         entityConfig.postPersistLifeCycleMethods.forEach {
-            addLifeCycleMethodsBuilder.addStatement("addPostPersistLifeCycleMethod(this.getEntityClass().getDeclaredMethod(\"" + it.name + "\"))")
+            addLifeCycleMethodsBuilder.addStatement("addPostPersistLifeCycleMethod(\$L)", createCreateAptMethodCode(it))
         }
 
         entityConfig.postLoadLifeCycleMethods.forEach {
-            addLifeCycleMethodsBuilder.addStatement("addPostLoadLifeCycleMethod(this.getEntityClass().getDeclaredMethod(\"" + it.name + "\"))")
+            addLifeCycleMethodsBuilder.addStatement("addPostLoadLifeCycleMethod(\$L)", createCreateAptMethodCode(it))
         }
 
         entityConfig.preUpdateLifeCycleMethods.forEach {
-            addLifeCycleMethodsBuilder.addStatement("addPreUpdateLifeCycleMethod(this.getEntityClass().getDeclaredMethod(\"" + it.name + "\"))")
+            addLifeCycleMethodsBuilder.addStatement("addPreUpdateLifeCycleMethod(\$L)", createCreateAptMethodCode(it))
         }
         entityConfig.postUpdateLifeCycleMethods.forEach {
-            addLifeCycleMethodsBuilder.addStatement("addPostUpdateLifeCycleMethod(this.getEntityClass().getDeclaredMethod(\"" + it.name + "\"))")
+            addLifeCycleMethodsBuilder.addStatement("addPostUpdateLifeCycleMethod(\$L)", createCreateAptMethodCode(it))
         }
 
         entityConfig.preRemoveLifeCycleMethods.forEach {
-            addLifeCycleMethodsBuilder.addStatement("addPreRemoveLifeCycleMethod(this.getEntityClass().getDeclaredMethod(\"" + it.name + "\"))")
+            addLifeCycleMethodsBuilder.addStatement("addPreRemoveLifeCycleMethod(\$L)", createCreateAptMethodCode(it))
         }
         entityConfig.postRemoveLifeCycleMethods.forEach {
-            addLifeCycleMethodsBuilder.addStatement("addPostRemoveLifeCycleMethod(this.getEntityClass().getDeclaredMethod(\"" + it.name + "\"))")
+            addLifeCycleMethodsBuilder.addStatement("addPostRemoveLifeCycleMethod(\$L)", createCreateAptMethodCode(it))
         }
 
         entityClassBuilder.addMethod(addLifeCycleMethodsBuilder.build())
@@ -374,7 +415,7 @@ class SourceCodeGeneratorEntityConfigurationProcessor : IEntityConfigurationProc
     private fun getEntityConfigClassName(entityConfig: EntityConfig) = entityConfig.tableName + "EntityConfig"
 
     fun getEntityConfigVariableName(entityConfig: EntityConfig): String {
-        return getEntityConfigVariableName(ClassName.get(entityConfig.entityClass))
+        return getEntityConfigVariableName(ClassName.get(entityConfig.type.packageName, entityConfig.type.className))
     }
 
     fun getEntityConfigVariableName(className: ClassName?): String {
@@ -397,7 +438,7 @@ class SourceCodeGeneratorEntityConfigurationProcessor : IEntityConfigurationProc
             val className = context.getClassName(entityConfig)
             val variableName = getEntityConfigVariableName(context.getClassName(entityConfig))
             generatedEntityConfigsBuilder.addStatement("\$T \$N = (\$T) $getEntityConfigMethodName(\$N, \$T.class)", className, variableName, className, resultVariableName,
-                    context.createClassName(entityConfig.entityClass))
+                    context.createClassName(entityConfig.type.className, entityConfig))
         }
     }
 

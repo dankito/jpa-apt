@@ -1,83 +1,75 @@
 package net.dankito.jpa.apt
 
 import net.dankito.jpa.apt.config.EntityConfig
-import net.dankito.jpa.apt.config.EntityTypeInfo
-import net.dankito.jpa.apt.reflection.ReflectionHelper
-import java.lang.reflect.Method
+import net.dankito.jpa.apt.config.Method
 import java.sql.SQLException
 import javax.lang.model.element.Element
 import javax.persistence.*
-import javax.tools.Diagnostic
 
 
-class EntityConfigurationReader(private val reflectionHelper: ReflectionHelper = ReflectionHelper()) {
+open class EntityConfigurationReader {
 
-    fun readEntityConfigurations(context: AnnotationProcessingContext) {
-        for(topLevelEntityInfo in context.getTopLevelEntities()) {
-            readEntityConfigsDownTheTypeHierarchy(context, topLevelEntityInfo, listOf())
+    // TODO: extract interface
+    open fun readEntityConfigurations(reader: IAnnotationReader) {
+        for(topLevelEntityInfo in reader.getTopLevelEntities()) {
+            readEntityConfigsDownTheTypeHierarchy(reader, topLevelEntityInfo)
         }
     }
 
-    private fun readEntityConfigsDownTheTypeHierarchy(context: AnnotationProcessingContext, entityTypeInfo: EntityTypeInfo, currentInheritanceTypeSubEntities: List<EntityConfig>) {
+    protected open fun readEntityConfigsDownTheTypeHierarchy(reader: IAnnotationReader, entityTypeInfo: EntityTypeInfo) {
         entityTypeInfo.entityElement?.let { entityElement -> // if entityElement is null then entity has been loaded from a previously built module and its EntityConfig therefore already created
-            readEntityConfig(context, entityTypeInfo, entityElement)
+            readEntityConfig(reader, entityTypeInfo, entityElement)
         }
 
         entityTypeInfo.childClasses.forEach {
-            readEntityConfigsDownTheTypeHierarchy(context, it, currentInheritanceTypeSubEntities)
+            readEntityConfigsDownTheTypeHierarchy(reader, it)
         }
     }
 
 
     @Throws(SQLException::class)
-    private fun readEntityConfig(context: AnnotationProcessingContext, entityTypeInfo: EntityTypeInfo, entityElement: Element): EntityConfig {
-        context.processingEnv.messager.printMessage(Diagnostic.Kind.NOTE, "Reading configuration for " + entityTypeInfo.entityClass.simpleName)
+    protected open fun readEntityConfig(reader: IAnnotationReader, entityTypeInfo: EntityTypeInfo,
+                                        entityElement: Element): EntityConfig {
 
-        val entityConfig = createEntityConfig(entityTypeInfo.entityClass)
+        reader.logInfo("Reading configuration for " + entityTypeInfo.type.className)
 
-        context.registerEntityConfig(entityConfig)
+        val entityConfig = createEntityConfig(reader, entityTypeInfo)
 
-        entityTypeInfo.superClassInfo?.let {
-            context.getEntityConfigForClass(it.entityClass)?.addChildEntityConfig(entityConfig)
+        reader.registerEntityConfig(entityConfig)
+
+        entityTypeInfo.superClass?.let { superclass ->
+            reader.getEntityConfigForType(superclass.type)?.addChildEntityConfig(entityConfig)
         }
 
-        readEntityAnnotations(entityConfig, entityElement)
-        findLifeCycleEvents(entityConfig)
+        readEntityAnnotations(reader, entityConfig)
+        findLifeCycleEvents(reader, entityConfig)
 
         return entityConfig
     }
 
     @Throws(SQLException::class)
-    private fun createEntityConfig(entityClass: Class<*>): EntityConfig {
-        val entityConfig: EntityConfig?
-        val inheritanceStrategy = getInheritanceStrategyIfEntityIsInheritanceStartEntity(entityClass)
+    private fun createEntityConfig(reader: IAnnotationReader, entity: EntityTypeInfo): EntityConfig {
+        reader.checkIfHasNoArgConstructor(entity)
 
-        if (inheritanceStrategy == null) {
-            val constructor = reflectionHelper.findNoArgConstructor(entityClass)
-            entityConfig = EntityConfig(entityClass, constructor)
-            entityConfig.classHierarchy = getClassHierarchy(entityClass)
-        }
-        else {
-//            entityConfig = createInheritanceEntityConfig(entityClass, inheritanceStrategy, currentInheritanceTypeSubEntities)
-            entityConfig = EntityConfig(entityClass, reflectionHelper.findNoArgConstructor(entityClass))
-        }
+        val entityConfig = EntityConfig(entity.type)
+//        entityConfig.classHierarchy = getClassHierarchy(entity) // TODO
 
-        entityConfig.tableName = entityConfig.entityClass.simpleName // default value, may overwritten by configuration in @Table or @Entity annotation
+        entityConfig.tableName = entityConfig.type.className // default value, may overwritten by configuration in @Table or @Entity annotation
 
         return entityConfig
     }
 
 
     @Throws(SQLException::class)
-    private fun readEntityAnnotations(entityConfig: EntityConfig, entityClassElement: Element) {
-        readEntityAnnotation(entityConfig, entityClassElement)
-        readTableAnnotation(entityConfig, entityClassElement)
-        readAccessAnnotation(entityConfig, entityClassElement)
+    private fun readEntityAnnotations(reader: IAnnotationReader, entityConfig: EntityConfig) {
+        readEntityAnnotation(reader, entityConfig)
+        readTableAnnotation(reader, entityConfig)
+        readAccessAnnotation(reader, entityConfig)
     }
 
     @Throws(SQLException::class)
-    private fun readEntityAnnotation(entityConfig: EntityConfig, entityClassElement: Element) {
-        entityClassElement.getAnnotation(Entity::class.java)?.let { entityAnnotation ->
+    private fun readEntityAnnotation(reader: IAnnotationReader, entityConfig: EntityConfig) {
+        reader.getAnnotation(entityConfig, Entity::class.java)?.let { entityAnnotation ->
             val name = entityAnnotation.name
             if(name.isNullOrBlank() == false) {
                 entityConfig.tableName = name
@@ -86,73 +78,67 @@ class EntityConfigurationReader(private val reflectionHelper: ReflectionHelper =
     }
 
     @Throws(SQLException::class)
-    private fun readTableAnnotation(entityConfig: EntityConfig, entityClassElement: Element) {
-        entityClassElement.getAnnotation(Table::class.java)?.let { tableAnnotation ->
+    private fun readTableAnnotation(reader: IAnnotationReader, entityConfig: EntityConfig) {
+        reader.getAnnotation(entityConfig, Table::class.java)?.let { tableAnnotation ->
             entityConfig.tableName = tableAnnotation.name
 
             entityConfig.catalogName = tableAnnotation.catalog
             entityConfig.schemaName = tableAnnotation.schema
-            
+
 //            entityConfig.uniqueConstraints = tableAnnotation.uniqueConstraints // TODO
 //            entityConfig.indexes = tableAnnotation.indexes // TODO: JPA 2.1
         }
     }
 
     @Throws(SQLException::class)
-    private fun readAccessAnnotation(entityConfig: EntityConfig, entityClassElement: Element) {
-        entityClassElement.getAnnotation(Access::class.java)?.let { accessAnnotation ->
+    private fun readAccessAnnotation(reader: IAnnotationReader, entityConfig: EntityConfig) {
+        reader.getAnnotation(entityConfig, Access::class.java)?.let { accessAnnotation ->
             entityConfig.access = accessAnnotation.value
         }
     }
 
 
-    private fun findLifeCycleEvents(entityConfig: EntityConfig) {
-        for(method in entityConfig.entityClass.declaredMethods) {
-            checkMethodForLifeCycleEvents(method, entityConfig)
+    private fun findLifeCycleEvents(reader: IAnnotationReader, entityConfig: EntityConfig) {
+        for(method in reader.getMethods(entityConfig)) {
+            checkMethodForLifeCycleEvents(reader, entityConfig, method)
         }
     }
 
-    private fun checkMethodForLifeCycleEvents(method: Method, entityConfig: EntityConfig) {
-        if (method.isAnnotationPresent(PrePersist::class.java))
+    private fun checkMethodForLifeCycleEvents(reader: IAnnotationReader, entityConfig: EntityConfig, method: Method) {
+        if (reader.isAnnotationPresent(entityConfig, method, PrePersist::class.java))
             entityConfig.addPrePersistLifeCycleMethod(method)
-        if (method.isAnnotationPresent(PostPersist::class.java))
+        if (reader.isAnnotationPresent(entityConfig, method, PostPersist::class.java))
             entityConfig.addPostPersistLifeCycleMethod(method)
-        if (method.isAnnotationPresent(PostLoad::class.java))
+        if (reader.isAnnotationPresent(entityConfig, method, PostLoad::class.java))
             entityConfig.addPostLoadLifeCycleMethod(method)
-        if (method.isAnnotationPresent(PreUpdate::class.java))
+        if (reader.isAnnotationPresent(entityConfig, method, PreUpdate::class.java))
             entityConfig.addPreUpdateLifeCycleMethod(method)
-        if (method.isAnnotationPresent(PostUpdate::class.java))
+        if (reader.isAnnotationPresent(entityConfig, method, PostUpdate::class.java))
             entityConfig.addPostUpdateLifeCycleMethod(method)
-        if (method.isAnnotationPresent(PreRemove::class.java))
+        if (reader.isAnnotationPresent(entityConfig, method, PreRemove::class.java))
             entityConfig.addPreRemoveLifeCycleMethod(method)
-        if (method.isAnnotationPresent(PostRemove::class.java))
+        if (reader.isAnnotationPresent(entityConfig, method, PostRemove::class.java))
             entityConfig.addPostRemoveLifeCycleMethod(method)
     }
 
 
-    private fun getInheritanceStrategyIfEntityIsInheritanceStartEntity(entityClass: Class<*>): InheritanceType? {
-
-        return null
-    }
-
-
-    private fun getClassHierarchy(entityClass: Class<*>) : List<Class<*>> {
-        val classHierarchy = mutableListOf<Class<*>>()
-        var classWalk: Class<*>? = entityClass.superclass
-
-        while (classWalk != null) {
-            if (classIsEntityOrMappedSuperclass(classWalk)) {
-                classHierarchy.add(0, classWalk)
-
-                classWalk = classWalk.superclass
-            }
-            else {
-                break
-            }
-        }
-
-        return classHierarchy
-    }
+//    private fun getClassHierarchy(entityClass: Class<*>) : List<Class<*>> {
+//        val classHierarchy = mutableListOf<Class<*>>()
+//        var classWalk: Class<*>? = entityClass.superclass
+//
+//        while (classWalk != null) {
+//            if (classIsEntityOrMappedSuperclass(classWalk)) {
+//                classHierarchy.add(0, classWalk)
+//
+//                classWalk = classWalk.superclass
+//            }
+//            else {
+//                break
+//            }
+//        }
+//
+//        return classHierarchy
+//    }
 
     private fun classIsEntityOrMappedSuperclass(entityClass: Class<*>): Boolean {
         return classIsEntity(entityClass) || classIsMappedSuperClass(entityClass)

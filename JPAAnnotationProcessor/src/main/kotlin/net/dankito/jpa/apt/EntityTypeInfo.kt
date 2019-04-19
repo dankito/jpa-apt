@@ -1,5 +1,6 @@
-package net.dankito.jpa.apt.reflectionfree
+package net.dankito.jpa.apt
 
+import net.dankito.jpa.apt.config.Type
 import javax.lang.model.element.AnnotationValue
 import javax.lang.model.element.ExecutableElement
 import javax.lang.model.element.TypeElement

@@ -1,4 +1,4 @@
-package net.dankito.jpa.apt.reflectionfree
+package net.dankito.jpa.apt.config
 
 
 abstract class ElementBase(val annotations: List<Annotation>, val modifiers: List<Modifier>) {

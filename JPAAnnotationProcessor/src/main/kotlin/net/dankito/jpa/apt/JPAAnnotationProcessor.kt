@@ -8,11 +8,10 @@ import javax.annotation.processing.SupportedAnnotationTypes
 import javax.annotation.processing.SupportedSourceVersion
 import javax.lang.model.SourceVersion
 import javax.lang.model.element.TypeElement
-import javax.tools.Diagnostic
 
 
 @SupportedAnnotationTypes("javax.persistence.*")
-@SupportedSourceVersion(SourceVersion.RELEASE_7)
+@SupportedSourceVersion(SourceVersion.RELEASE_8)
 class JPAAnnotationProcessor : AbstractProcessor() {
 
     companion object {
@@ -20,44 +19,44 @@ class JPAAnnotationProcessor : AbstractProcessor() {
     }
 
 
-    override fun process(annotations: MutableSet<out TypeElement>?, roundEnv: RoundEnvironment?): Boolean {
-        processingEnv.messager.printMessage(Diagnostic.Kind.NOTE, "Running " + javaClass.simpleName)
+    override fun process(annotations: MutableSet<out TypeElement>, roundEnv: RoundEnvironment): Boolean {
+        val reader = AptAnnotationReader(processingEnv, roundEnv)
 
-        roundEnv?.let {
-            if (roundEnv.processingOver() || annotations?.isEmpty() ?: true) {
-                processingEnv.messager.printMessage(Diagnostic.Kind.NOTE, "roundEnv.processingOver() = ${roundEnv.processingOver()}, annotations?.isEmpty() = ${annotations?.isEmpty()}")
-                return ALLOW_OTHER_PROCESSORS_TO_CLAIM_ANNOTATIONS
-            }
+        reader.logInfo("Running " + javaClass.simpleName)
 
-            if (roundEnv.getRootElements() == null || roundEnv.getRootElements().isEmpty()) {
-                processingEnv.messager.printMessage(Diagnostic.Kind.NOTE, "No sources to process")
-                return ALLOW_OTHER_PROCESSORS_TO_CLAIM_ANNOTATIONS
-            }
+        if (roundEnv.processingOver() || annotations.isEmpty()) {
+            reader.logInfo("Nothing to do: roundEnv.processingOver() = ${roundEnv.processingOver()}, " +
+                    "annotations.isEmpty() = ${annotations.isEmpty()}")
+            return ALLOW_OTHER_PROCESSORS_TO_CLAIM_ANNOTATIONS
+        }
 
-            try {
-                processAnnotations(roundEnv)
-            } catch(e: Exception) {
-                processingEnv.messager.printMessage(Diagnostic.Kind.ERROR, "Could not process JPA annotations: $e")
-            }
+        if (roundEnv.rootElements.isNullOrEmpty()) {
+            reader.logInfo("Nothing to do: No sources to process")
+            return ALLOW_OTHER_PROCESSORS_TO_CLAIM_ANNOTATIONS
+        }
+
+
+        try {
+            processAnnotations(reader) // TODO: what to return here?
+        } catch(e: Exception) {
+            reader.logError("Could not process JPA annotations", e)
         }
 
         return ALLOW_OTHER_PROCESSORS_TO_CLAIM_ANNOTATIONS
     }
 
-    private fun processAnnotations(roundEnv: RoundEnvironment) {
-        val context = AnnotationProcessingContext(roundEnv, processingEnv)
+    private fun processAnnotations(reader: IAnnotationReader) {
+        EntityConfigurationReader().readEntityConfigurations(reader)
+        ColumnConfigurationReader().readEntityColumns(reader)
 
-        EntityConfigurationReader().readEntityConfigurations(context)
-        ColumnConfigurationReader().readEntityColumns(context)
-
-        val entityConfiguration = createResult(context)
+        val entityConfiguration = createResult(reader)
 
         SourceCodeGeneratorEntityConfigurationProcessor().processConfiguration(entityConfiguration, processingEnv)
     }
 
 
-    private fun createResult(context: AnnotationProcessingContext): JPAEntityConfiguration {
-        return JPAEntityConfiguration(context.getEntityConfigsInOrderAdded())
+    private fun createResult(reader: IAnnotationReader): JPAEntityConfiguration {
+        return JPAEntityConfiguration(reader.getEntityConfigsInOrderAdded())
     }
 
 }

@@ -1,50 +1,68 @@
 package net.dankito.jpa.apt.config
 
-import java.lang.reflect.Field
-import java.lang.reflect.Method
 import java.lang.reflect.ParameterizedType
-import java.lang.reflect.Type
 
 
-data class Property(val field: Field, val getter: Method?, val setter: Method?) {
+class Property(val field: Field, val getter: Method?, val setter: Method?) {
 
-    internal constructor() : this(Property::class.java.getDeclaredField("field"), null, null) // for Jackson
+    internal constructor() : this(Field(), null, null) // for object deserializers
+
+
+    private var classType: Class<*>? = null
 
 
     fun getType(): Class<*> {
-        if (field != null) {
-            return field.type
+        classType?.let {
+            return it
         }
 
-        if (getter != null) {
-            return getter.getReturnType()
-        }
+        getPropertyType()?.let { type ->
+            try {
+                val retrievedType = type.getClassType()
+                this.classType = retrievedType
 
-        if (setter != null && setter.getParameterTypes().size == 1) {
-            return setter.getParameterTypes()[0]
+                return retrievedType
+            } catch (e: Exception) {
+                println("Could not get Class for type ${type.qualifiedName}")
+            }
         }
 
         throw RuntimeException("Could not get type for property $this") // should never come to this
     }
 
-    fun getGenericType(): Class<*>? {
-        if (field.genericType is ParameterizedType) {
-            return getGenericTypeClassFromType(field.genericType)
+    private fun getPropertyType(): Type? {
+        if (field != null) { // TODO: is this allowed that field is null?
+            return field.type
         }
 
-        if (getter != null && getter.genericReturnType is ParameterizedType) {
-            return getGenericTypeClassFromType(getter.genericReturnType)
+        if (getter != null) {
+            return getter.returnType
         }
 
-        if (setter != null && setter.parameterTypes.size == 1 && setter.getGenericParameterTypes()[0] is ParameterizedType) {
-            return getGenericTypeClassFromType(setter.genericParameterTypes[0])
+        if (setter != null && setter.hasCountParameters(1)) {
+            return setter.parameters[0]
         }
 
         return null
     }
 
-    private fun getGenericTypeClassFromType(genericType: Type): Class<*> {
-        return (genericType as ParameterizedType).actualTypeArguments[0] as Class<*>
+    fun getGenericType(): Class<*>? {
+        val type = getType()
+
+        if (type is ParameterizedType) {
+            return getGenericTypeClassFromType(type)
+        }
+
+        return null
+    }
+
+    private fun getGenericTypeClassFromType(genericType: ParameterizedType): Class<*> {
+        return genericType.actualTypeArguments[0] as Class<*>
+    }
+
+
+    override fun toString(): String {
+        return field.toString()
     }
 
 }

@@ -38,11 +38,11 @@ class ReflectionHelper {
 
 
     fun makeAccessible(property: Property) {
-        makeAccessible(property.field)
-
-        property.getter?.let { getter -> makeAccessible(getter) }
-
-        property.setter?.let { setter -> makeAccessible(setter) }
+//        makeAccessible(property.field)
+//
+//        property.getter?.let { getter -> makeAccessible(getter) }
+//
+//        property.setter?.let { setter -> makeAccessible(setter) }
     }
 
     fun makeAccessible(accessibleObject: AccessibleObject) {
@@ -56,19 +56,19 @@ class ReflectionHelper {
     }
 
 
-    fun findProperties(fields: List<Field>, methodsMap: MutableMap<String, Method>) : List<Property> {
-        val properties = ArrayList<Property>()
-
-        for(field in fields) {
-            val getter = findGetMethod(field, methodsMap)
-            val setter = findSetMethod(field, methodsMap)
-
-            val property = Property(field, getter, setter)
-            properties.add(property)
-        }
-
-        return properties
-    }
+//    fun findProperties(fields: List<Field>, methodsMap: MutableMap<String, Method>) : List<Property> {
+//        val properties = ArrayList<Property>()
+//
+//        for(field in fields) {
+//            val getter = findGetMethod(field, methodsMap)
+//            val setter = findSetMethod(field, methodsMap)
+//
+//            val property = Property(field, getter, setter)
+//            properties.add(property)
+//        }
+//
+//        return properties
+//    }
 
     private fun findGetMethod(field: Field, methodsMap: MutableMap<String, Method>): Method? {
         val fieldName = getFieldNameWithFirstLetterUpperCase(field)

@@ -1,14 +1,10 @@
 package net.dankito.jpa.apt
 
-import net.dankito.jpa.apt.config.ColumnConfig
-import net.dankito.jpa.apt.config.EntityConfig
-import net.dankito.jpa.apt.config.RelationType
+import net.dankito.jpa.apt.config.*
 import org.slf4j.LoggerFactory
 import java.sql.SQLException
-import javax.lang.model.element.Element
 import javax.lang.model.type.MirroredTypeException
 import javax.persistence.*
-import javax.tools.Diagnostic
 
 
 class RelationColumnConfigurationReader {
@@ -18,38 +14,39 @@ class RelationColumnConfigurationReader {
     }
 
 
-    fun readRelationConfiguration(column: ColumnConfig, element: Element, context: AnnotationProcessingContext) {
+    fun readRelationConfiguration(reader: IAnnotationReader, element: ElementBase, column: ColumnConfig) {
         element.getAnnotation(OneToOne::class.java)?.let { oneToOne ->
-            readOneToOneConfiguration(column, element, oneToOne, context)
+            readOneToOneConfiguration(reader, element, column, oneToOne)
         }
 
         element.getAnnotation(ManyToOne::class.java)?.let { manyToOne ->
-            readManyToOneConfiguration(column, element, manyToOne, context)
+            readManyToOneConfiguration(reader, element, column, manyToOne)
         }
 
         element.getAnnotation(OneToMany::class.java)?.let { oneToMany ->
-            readOneToManyConfiguration(column, oneToMany, context)
+            readOneToManyConfiguration(reader, column, oneToMany)
         }
 
         element.getAnnotation(ManyToMany::class.java)?.let { manyToMany ->
-            readManyToManyConfiguration(column, manyToMany, context)
+            readManyToManyConfiguration(reader, column, manyToMany)
         }
     }
 
 
-    private fun readOneToOneConfiguration(column: ColumnConfig, element: Element, oneToOne: OneToOne, context: AnnotationProcessingContext) {
+    private fun readOneToOneConfiguration(reader: IAnnotationReader, element: ElementBase, column: ColumnConfig, oneToOne: OneToOne) {
+
         column.relationType = RelationType.OneToOne
 
-        readJoinColumnConfiguration(column, element)
+        readJoinColumnConfiguration(element, column)
 
-        val targetEntityAnnotationValue = getClassFromAnnotationValue(oneToOne)
-        column.targetEntity = getTargetEntityConfig(column, targetEntityAnnotationValue, context)
+        val targetEntityClassName = getClassNameFromAnnotationValue(oneToOne)
+        column.targetEntity = getTargetEntityConfig(reader, column, targetEntityClassName)
 
         column.cascade = oneToOne.cascade.filterNotNull().toTypedArray()
 
         column.fetch = oneToOne.fetch
         if (column.fetch == FetchType.LAZY) {
-            context.processingEnv.messager.printMessage(Diagnostic.Kind.WARNING, "FetchType.LAZY as for $column is not supported for @OneToOne relationships as this would " +
+            reader.logWarn("FetchType.LAZY as for $column is not supported for @OneToOne relationships as this would " +
                     "require Proxy Generation or Byte code manipulation like with JavaAssist,  which is not supported on Android.\n" +
                     "As LAZY is per JPA specification only a hint, it will be in this case silently ignored and Fetch set to  EAGER.")
         }
@@ -67,19 +64,20 @@ class RelationColumnConfigurationReader {
     }
 
 
-    private fun readManyToOneConfiguration(column: ColumnConfig, element: Element, manyToOne: ManyToOne, context: AnnotationProcessingContext) {
+    private fun readManyToOneConfiguration(reader: IAnnotationReader, element: ElementBase, column: ColumnConfig, manyToOne: ManyToOne) {
+
         column.relationType = RelationType.ManyToOne
 
-        readJoinColumnConfiguration(column, element)
+        readJoinColumnConfiguration(element, column)
 
-        val targetEntityAnnotationValue = getClassFromAnnotationValue(manyToOne)
-        column.targetEntity = getTargetEntityConfig(column, targetEntityAnnotationValue, context)
+        val targetEntityAnnotationValue = getClassNameFromAnnotationValue(manyToOne)
+        column.targetEntity = getTargetEntityConfig(reader, column, targetEntityAnnotationValue)
 
         column.cascade = manyToOne.cascade.filterNotNull().toTypedArray()
 
         column.fetch = manyToOne.fetch
         if (column.fetch == FetchType.LAZY) {
-            context.processingEnv.messager.printMessage(Diagnostic.Kind.WARNING, "FetchType.LAZY as for $column is not supported for @ManyToOne relationships as this would " +
+            reader.logWarn("FetchType.LAZY as for $column is not supported for @ManyToOne relationships as this would " +
                     "require Proxy Generation or Byte code manipulation like with JavaAssist, which is not supported on Android.\n" +
                     "As LAZY is per JPA specification only a hint, it will be in this case silently ignored and Fetch set to  EAGER.")
         }
@@ -91,11 +89,11 @@ class RelationColumnConfigurationReader {
     }
 
 
-    private fun readOneToManyConfiguration(column: ColumnConfig, oneToMany: OneToMany, context: AnnotationProcessingContext) {
+    private fun readOneToManyConfiguration(reader: IAnnotationReader, column: ColumnConfig, oneToMany: OneToMany) {
         column.relationType = RelationType.OneToMany
 
-        val targetEntityAnnotationValue = getClassFromAnnotationValue(oneToMany)
-        column.targetEntity = getTargetEntityConfig(column, targetEntityAnnotationValue, context)
+        val targetEntityAnnotationValue = getClassNameFromAnnotationValue(oneToMany)
+        column.targetEntity = getTargetEntityConfig(reader, column, targetEntityAnnotationValue)
 
         column.cascade = oneToMany.cascade.filterNotNull().toTypedArray()
 
@@ -124,11 +122,11 @@ class RelationColumnConfigurationReader {
     }
 
 
-    private fun readManyToManyConfiguration(column: ColumnConfig, manyToMany: ManyToMany, context: AnnotationProcessingContext) {
+    private fun readManyToManyConfiguration(reader: IAnnotationReader, column: ColumnConfig, manyToMany: ManyToMany) {
         column.relationType = RelationType.ManyToMany
 
-        val targetEntityAnnotationValue = getClassFromAnnotationValue(manyToMany)
-        column.targetEntity = getTargetEntityConfig(column, targetEntityAnnotationValue, context)
+        val targetEntityAnnotationValue = getClassNameFromAnnotationValue(manyToMany)
+        column.targetEntity = getTargetEntityConfig(reader, column, targetEntityAnnotationValue)
 
         column.cascade = manyToMany.cascade.filterNotNull().toTypedArray()
 
@@ -173,92 +171,62 @@ class RelationColumnConfigurationReader {
     }
 
 
-    private fun getClassFromAnnotationValue(oneToOne: OneToOne): Class<*>? {
-        // accessing targetEntity value directly throws javax.lang.model.type.MirroredTypeException: Attempt to access Class object for TypeMirror ...
-        // see https://stackoverflow.com/questions/7687829/java-6-annotation-processing-getting-a-class-from-an-annotation or http://blog.retep.org/2009/02/13/getting-class-values-from-annotations-in-an-annotationprocessor/
-        try {
-            oneToOne.targetEntity // this should throw
+    /**
+     * TODO: don't rely on TypeMirror, abstract that away via IAnnotationReader. E. g. a reflection based
+     * implementation should not be aware of TypeMirrors
+     */
+    private fun getClassNameFromAnnotationValue(oneToOne: OneToOne): String? {
+        try { // this should throw an exception, for explanation see getClassNameFromMirroredTypeException()
+            return oneToOne.targetEntity.qualifiedName
         } catch (mte: MirroredTypeException) {
-            try {
-                val type = mte.typeMirror.toString()
-                if(type == "void") { // targetEntity value not set
-                    return null
-                }
-
-                return Class.forName(type)
-            } catch(getClassFromTypeMirrorException: Exception) {
-                log.error("Could not get Class from TypeMirror ${mte.typeMirror}")
-            }
+            return getClassNameFromMirroredTypeException(mte)
         }
-
-        return null // can this ever happen ??
     }
 
-    private fun getClassFromAnnotationValue(manyToOne: ManyToOne): Class<*>? {
-        // accessing targetEntity value directly throws javax.lang.model.type.MirroredTypeException: Attempt to access Class object for TypeMirror ...
-        // see https://stackoverflow.com/questions/7687829/java-6-annotation-processing-getting-a-class-from-an-annotation or http://blog.retep.org/2009/02/13/getting-class-values-from-annotations-in-an-annotationprocessor/
-        try {
-            manyToOne.targetEntity // this should throw
+    private fun getClassNameFromAnnotationValue(manyToOne: ManyToOne): String? {
+        try { // this should throw an exception, for explanation see getClassNameFromMirroredTypeException()
+            return manyToOne.targetEntity.qualifiedName
         } catch (mte: MirroredTypeException) {
-            try {
-                val type = mte.typeMirror.toString()
-                if(type == "void") { // targetEntity value not set
-                    return null
-                }
-
-                return Class.forName(type)
-            } catch(getClassFromTypeMirrorException: Exception) {
-                log.error("Could not get Class from TypeMirror ${mte.typeMirror}")
-            }
+            return getClassNameFromMirroredTypeException(mte)
         }
-
-        return null // can this ever happen ??
     }
 
-    private fun getClassFromAnnotationValue(oneToMany: OneToMany): Class<*>? {
-        // accessing targetEntity value directly throws javax.lang.model.type.MirroredTypeException: Attempt to access Class object for TypeMirror ...
-        // see https://stackoverflow.com/questions/7687829/java-6-annotation-processing-getting-a-class-from-an-annotation or http://blog.retep.org/2009/02/13/getting-class-values-from-annotations-in-an-annotationprocessor/
-        try {
-            oneToMany.targetEntity // this should throw
+    private fun getClassNameFromAnnotationValue(oneToMany: OneToMany): String? {
+        try { // this should throw an exception, for explanation see getClassNameFromMirroredTypeException()
+            return oneToMany.targetEntity.qualifiedName
         } catch (mte: MirroredTypeException) {
-            try {
-                val type = mte.typeMirror.toString()
-                if(type == "void") { // targetEntity value not set
-                    return null
-                }
-
-                return Class.forName(type)
-            } catch(getClassFromTypeMirrorException: Exception) {
-                log.error("Could not get Class from TypeMirror ${mte.typeMirror}")
-            }
+            return getClassNameFromMirroredTypeException(mte)
         }
-
-        return null // can this ever happen ??
     }
 
-    private fun getClassFromAnnotationValue(manyToMany: ManyToMany): Class<*>? {
+    private fun getClassNameFromAnnotationValue(manyToMany: ManyToMany): String? {
+        try { // this should throw an exception, for explanation see getClassNameFromMirroredTypeException()
+            return manyToMany.targetEntity.qualifiedName
+        } catch (mte: MirroredTypeException) {
+            return getClassNameFromMirroredTypeException(mte)
+        }
+    }
+
+    private fun getClassNameFromMirroredTypeException(exception: MirroredTypeException): String? {
         // accessing targetEntity value directly throws javax.lang.model.type.MirroredTypeException: Attempt to access Class object for TypeMirror ...
         // see https://stackoverflow.com/questions/7687829/java-6-annotation-processing-getting-a-class-from-an-annotation or http://blog.retep.org/2009/02/13/getting-class-values-from-annotations-in-an-annotationprocessor/
-        try {
-            manyToMany.targetEntity // this should throw
-        } catch (mte: MirroredTypeException) {
-            try {
-                val type = mte.typeMirror.toString()
-                if(type == "void") { // targetEntity value not set
-                    return null
-                }
 
-                return Class.forName(type)
-            } catch(getClassFromTypeMirrorException: Exception) {
-                log.error("Could not get Class from TypeMirror ${mte.typeMirror}")
+        try {
+            val className = exception.typeMirror.toString()
+            if (className == "void") { // targetEntity value not set
+                return null
             }
+
+            return className
+        } catch (getClassFromTypeMirrorException: Exception) {
+            log.error("Could not get Class from TypeMirror ${exception.typeMirror}")
         }
 
         return null // can this ever happen ??
     }
 
     @Throws(SQLException::class)
-    private fun readJoinColumnConfiguration(column: ColumnConfig, element: Element) {
+    private fun readJoinColumnConfiguration(element: ElementBase, column: ColumnConfig) {
         var joinColumnAnnotationOrNameNotSet = true
 
         element.getAnnotation(JoinColumn::class.java)?.let { joinColumn ->
@@ -311,11 +279,12 @@ class RelationColumnConfigurationReader {
 
 
     @Throws(SQLException::class)
-    private fun getTargetEntityConfig(column: ColumnConfig, annotationTargetEntityValue: Class<*>?, context: AnnotationProcessingContext): EntityConfig {
-        var targetEntityClass = getTargetEntityClass(column, annotationTargetEntityValue)
+    private fun getTargetEntityConfig(reader: IAnnotationReader, column: ColumnConfig, targetEntityClassName: String?): EntityConfig {
+        val targetEntityClass = getTargetEntityClass(reader, column, targetEntityClassName)
 
-        val targetEntity = context.getEntityConfigForClass(targetEntityClass)
-        if(targetEntity == null) {
+        val targetEntity = reader.getEntityConfigForType(targetEntityClass)
+
+        if (targetEntity == null) {
             throw SQLException("Target Class $targetEntityClass for Property $column is not configured as Entity or has not been passed as parameter to readConfiguration()\r\n" +
                     "Please configure it as @Entity and add it as parameter to readConfiguration() method of JpaEntityConfigurationReader.")
         }
@@ -323,31 +292,44 @@ class RelationColumnConfigurationReader {
         return targetEntity
     }
 
+    /**
+     * If the field targetEntity on a OneToOne, OneToMany, ... annotation is set (that's the [targetEntityClassName]
+     * parameter), use that one.
+     *
+     * Else if column's type is any of the collection types, use the collection's generic parameter type as type
+     * (valid for xyzToMany relations).
+     *
+     * Otherwise use column's type (valid for xyzToOne relations).
+     */
     @Throws(SQLException::class)
-    private fun getTargetEntityClass(column: ColumnConfig, annotationTargetEntityValue: Class<*>?): Class<*> {
-        var targetEntityClass = column.type
+    private fun getTargetEntityClass(reader: IAnnotationReader, column: ColumnConfig, targetEntityClassName: String?): Type {
 
-        if (annotationTargetEntityValue != null && annotationTargetEntityValue != Void::class) { // Void is the default value for targetEntity
+        val targetType = targetEntityClassName?.let { reader.typeFromQualifiedName(it) } // TODO: don't use typeFromQualifiedName(), it's intended for parameters only
+
+        // targetEntity on a OneToOne, OneToMany, ManyToOne or ManyToMany annotation is set
+        if (targetType != null && targetType.isVoidType == false) { // Void is the default value for targetEntity
             // TODO
-    //            if(isEntityOrMappedSuperclass(annotationTargetEntityValue) == false) {
-    //                throw SQLException("Target Class " + annotationTargetEntityValue + " on Property " + column + " is not configured as @Entity or @MappedSuperclass.\r\n" +
-    //                        "Please add @Entity or @MappedSuperclass to $annotationTargetEntityValue.")
-    //            }
+            //            if(isEntityOrMappedSuperclass(targetEntityClassName) == false) {
+            //                throw SQLException("Target Class " + targetEntityClassName + " on Property " + column + " is not configured as @Entity or @MappedSuperclass.\r\n" +
+            //                        "Please add @Entity or @MappedSuperclass to $targetEntityClassName.")
+            //            }
 
-            targetEntityClass = annotationTargetEntityValue
+            return targetType
         }
-        else if (Collection::class.java.isAssignableFrom(targetEntityClass)) {
-            val genericType = column.property.getGenericType()
-
-            if (genericType == null) {
+        // otherwise for a OneToMany or ManyToMany relation: column is a (descendant of) Collection -> it's generic
+        // type parameter has to be set
+        else if (column.type.canBeAssignedTo(Collection::class.java)) {
+            if (column.type.genericArguments.isEmpty()) {
                 throw SQLException("For relation property " + column + " either Annotation's targetEntity value has to be set or it's type has to be a " +
                         "Collection with generic type set to target entity's type.")
             } else {
-                targetEntityClass = genericType
+                return column.type.genericArguments.first()
             }
         }
-
-        return targetEntityClass
+        // otherwise for OneToOne and ManyToOne relation: simple return column's type
+        else {
+            return column.type
+        }
     }
 
 }

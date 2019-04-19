@@ -1,4 +1,6 @@
-package net.dankito.jpa.apt.reflectionfree
+package net.dankito.jpa.apt
+
+import net.dankito.jpa.apt.config.*
 
 
 /**

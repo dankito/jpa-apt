@@ -3,7 +3,6 @@ package net.dankito.jpa.apt.config
 import com.fasterxml.jackson.annotation.JsonIdentityInfo
 import com.fasterxml.jackson.annotation.ObjectIdGenerators
 import java.lang.reflect.Constructor
-import java.lang.reflect.Method
 import java.util.*
 import javax.persistence.AccessType
 import javax.persistence.CascadeType
@@ -13,17 +12,11 @@ import kotlin.collections.LinkedHashSet
 
 @JsonIdentityInfo(
         generator = ObjectIdGenerators.PropertyGenerator::class,
-        property = "entityClass")
-open class EntityConfig(val entityClass: Class<*>, val constructor: Constructor<*>) {
+        property = "type")
+open class EntityConfig(val type: Type) {
 
-    /**
-     * As we currently only support no-arg constructors, this convenience constructor automatically gets no-arg constructor from passed class
-     */
-    constructor(entityClass: Class<*>) : this(entityClass, entityClass.getDeclaredConstructor())
+    internal constructor() : this(Type()) // for object deserializers
 
-    internal constructor() : this(Any::class.java) { // for Jackson
-
-    }
 
     lateinit var tableName: String
 
@@ -32,7 +25,7 @@ open class EntityConfig(val entityClass: Class<*>, val constructor: Constructor<
 
     lateinit var idColumn: ColumnConfig
     var versionColumn: ColumnConfig? = null
-    
+
     var columns = ArrayList<ColumnConfig>()
         private set
 
@@ -40,7 +33,7 @@ open class EntityConfig(val entityClass: Class<*>, val constructor: Constructor<
         private set
 
     val childEntities = ArrayList<EntityConfig>()
-    
+
 
     // @Table Annotation settings
     var catalogName: String? = null
@@ -82,6 +75,14 @@ open class EntityConfig(val entityClass: Class<*>, val constructor: Constructor<
 
     private var areInheritedColumnsWithCascadeRemoveLoaded = false
     private var columnsWithCascadeRemoveIncludingInheritedOnes = LinkedHashSet<ColumnConfig>()
+
+
+    /**
+     * Caution: Use these two fields only at runtime, not at build time!
+     */
+    private var entityClass: Class<*>? = null
+
+    private val methods = mutableMapOf<Method, java.lang.reflect.Method>()
 
 
     fun addPrePersistLifeCycleMethod(method: Method) {
@@ -162,20 +163,70 @@ open class EntityConfig(val entityClass: Class<*>, val constructor: Constructor<
 
     private fun invokeMethod(method: Method, data: Any) {
         try {
-            val isAccessible = method.isAccessible
-            if (isAccessible == false) {
-                method.isAccessible = true
+            val javaLangMethod = getJavaLangMethod(method)
+
+            if (javaLangMethod.isAccessible == false) {
+                javaLangMethod.isAccessible = true
             }
 
-            method.invoke(data)
-
-            if (isAccessible == false) {
-                method.isAccessible = false
-            }
+            javaLangMethod.invoke(data)
         } catch (ex: Exception) {
-//            log.error("Could not invoke method " + method.name, ex)
+            println("Could not invoke method ${type.className}.${method.name}: $ex")
         }
 
+    }
+
+    /**
+     * Call this method only at runtime, not at build time, as at build time class may is not already compiled!
+     */
+    fun getEntityClass(): Class<*> {
+        entityClass?.let {
+            return it
+        }
+
+        val retrievedClass = Class.forName(type.qualifiedName)
+
+        this.entityClass = retrievedClass
+
+        return retrievedClass
+    }
+
+    fun getNoArgConstructor(): Constructor<*> {
+        try {
+            getEntityClass().declaredConstructors.forEach { constructor ->
+                if (constructor.parameterCount == 0) {
+                    if (constructor.isAccessible == false) {
+                        constructor.isAccessible = true
+                    }
+
+                    return constructor
+                }
+            }
+        } catch (e: Exception) {
+            println("Could not get no-arg constructor for class ${type.qualifiedName}: " + e)
+        }
+
+        // should actually never come to this as we already checked with IAnnotationReader.checkIfHasNoArgConstructor()
+        // that a no-arg constructor exists
+        throw IllegalStateException("Could not find a no-arg constructor for class ${type.qualifiedName}. Please " +
+                "provide it in order to make it instantiatable")
+    }
+
+    /**
+     * Call this method only at runtime, not at build time, as at build time class and therefore method may is not
+     * already compiled!
+     */
+    private fun getJavaLangMethod(method: Method): java.lang.reflect.Method {
+        methods[method]?.let {
+            return it
+        }
+
+        val retrievedMethod = getEntityClass().getDeclaredMethod(method.name,
+                *method.parameters.map { Class.forName(it.qualifiedName) }.toTypedArray())
+
+        methods.put(method, retrievedMethod)
+
+        return retrievedMethod
     }
 
 
@@ -293,12 +344,7 @@ open class EntityConfig(val entityClass: Class<*>, val constructor: Constructor<
 
 
     override fun toString(): String {
-        if(tableName != null) {
-            return tableName
-        }
-        else {
-            return entityClass.simpleName
-        }
+        return "$tableName (${type.qualifiedName})"
     }
 
 }

@@ -14,6 +14,7 @@
 package net.dankito.jpa.apt.util
 
 //import net.dankito.jpa.apt.generated.GeneratedEntityConfigs
+import net.dankito.jpa.apt.JPAAnnotationProcessor
 import org.junit.Assert
 import java.io.ByteArrayOutputStream
 import java.io.File
@@ -53,7 +54,7 @@ abstract class AbstractProcessorTest {
     protected fun process(classNames: List<String>) {
         val sourceFiles = createSourceFileList(*classNames.toTypedArray())
 
-        process(net.dankito.jpa.apt.reflectionfree.JPAAnnotationProcessor::class.java, sourceFiles, OutputDirectoryName)
+        process(JPAAnnotationProcessor::class.java, sourceFiles, OutputDirectoryName)
 
 //        val generatedEntityConfigs = GeneratedEntityConfigs().getGeneratedEntityConfigs()
 //        if(generatedEntityConfigs != null) { }

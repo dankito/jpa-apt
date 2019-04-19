@@ -55,7 +55,7 @@ class SourceCodeGeneratorContext(entityConfiguration: JPAEntityConfiguration) {
     }
 
     fun createClassName(className: String, entityConfig: EntityConfig): ClassName {
-        return ClassName.get(entityConfig.entityClass.`package`.name, className)
+        return ClassName.get(entityConfig.type.packageName, className)
     }
 
     fun createClassName(clazz: Class<*>): ClassName {
@@ -68,7 +68,7 @@ class SourceCodeGeneratorContext(entityConfiguration: JPAEntityConfiguration) {
 
     fun getClassName(entityConfig: EntityConfig): ClassName? {
         classNamesToEntityConfigsMap.entries.forEach {
-            if(it.value.entityClass == entityConfig.entityClass) {
+            if(it.value.type == entityConfig.type) {
                 return it.key
             }
         }

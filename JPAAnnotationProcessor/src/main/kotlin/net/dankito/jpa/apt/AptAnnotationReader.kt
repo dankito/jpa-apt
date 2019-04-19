@@ -1,5 +1,7 @@
-package net.dankito.jpa.apt.reflectionfree
+package net.dankito.jpa.apt
 
+import net.dankito.jpa.apt.config.*
+import net.dankito.jpa.apt.config.Modifier
 import javax.annotation.processing.ProcessingEnvironment
 import javax.annotation.processing.RoundEnvironment
 import javax.lang.model.element.*
@@ -268,8 +270,8 @@ open class AptAnnotationReader(protected val processingEnv: ProcessingEnvironmen
         }
 
         val retrievedMethods =  getMethodElements(entityConfig)
-                                    .mapNotNull { it as? ExecutableElement }
-                                    .map { createMethod(it) }
+                .mapNotNull { it as? ExecutableElement }
+                .map { createMethod(it) }
 
         this.methods = retrievedMethods
 

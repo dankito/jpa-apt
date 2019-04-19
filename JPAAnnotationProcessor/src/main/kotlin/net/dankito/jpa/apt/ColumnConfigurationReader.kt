@@ -1,91 +1,80 @@
 package net.dankito.jpa.apt
 
-import net.dankito.jpa.apt.config.ColumnConfig
-import net.dankito.jpa.apt.config.DataType
-import net.dankito.jpa.apt.config.EntityConfig
-import net.dankito.jpa.apt.config.Property
-import net.dankito.jpa.apt.reflection.ReflectionHelper
+import net.dankito.jpa.apt.config.*
 import java.sql.SQLException
 import java.util.*
-import javax.lang.model.element.Element
-import javax.lang.model.element.ElementKind
 import javax.persistence.*
-import javax.tools.Diagnostic
 
 
-class ColumnConfigurationReader(private var relationColumnConfigurationReader: RelationColumnConfigurationReader = RelationColumnConfigurationReader(),
-                                private var reflectionHelper: ReflectionHelper = ReflectionHelper()) {
+open class ColumnConfigurationReader(private var relationColumnConfigurationReader: RelationColumnConfigurationReader = RelationColumnConfigurationReader()) {
 
-    fun readEntityColumns(context: AnnotationProcessingContext) {
-        for(entityConfig in context.getEntityConfigsInOrderAdded()) {
-            readEntityColumns(entityConfig, context)
+    fun readEntityColumns(reader: IAnnotationReader) {
+        for(entityConfig in reader.getEntityConfigsInOrderAdded()) {
+            readEntityColumns(reader, entityConfig)
         }
     }
 
-    private fun readEntityColumns(entityConfig: EntityConfig, context: AnnotationProcessingContext) {
-        val fields = reflectionHelper.getNonStaticNonTransientFields(entityConfig.entityClass)
-        val methodsMap = reflectionHelper.getNonStaticNonAbstractNonTransientMethodsMap(entityConfig.entityClass)
+    private fun readEntityColumns(reader: IAnnotationReader, entityConfig: EntityConfig) {
+        // TODO: set all fields and methods directly on type so that logic for nonStatic() etc. can be implemented here
+        val fields = reader.getNonStaticNonTransientFields(entityConfig)
+        val methodsMap = reader.getNonStaticNonAbstractNonTransientMethodsMap(entityConfig)
 
-        val properties = reflectionHelper.findProperties(fields, methodsMap)
-        properties.forEach { context.registerProperty(it) }
+        val properties = findProperties(fields, methodsMap)
+        properties.forEach { reader.registerProperty(it) }
 
-        readEntityColumns(properties, entityConfig, context)
+        readEntityColumns(reader, entityConfig, properties)
     }
 
-    private fun readEntityColumns(properties: List<Property>, entityConfig: EntityConfig, context: AnnotationProcessingContext) {
+    private fun readEntityColumns(reader: IAnnotationReader, entityConfig: EntityConfig, properties: List<Property>) {
         for(property in properties) {
-            val cachedPropertyConfig = context.getColumnConfiguration(property)
+            val cachedPropertyConfig = reader.getColumnConfiguration(property)
 
             if (cachedPropertyConfig != null) {
                 entityConfig.addColumn(cachedPropertyConfig)
             }
             else {
-                val column = readColumnConfiguration(entityConfig, property, context)
+                val column = readColumnConfiguration(reader, entityConfig, property)
                 entityConfig.addColumn(column)
             }
         }
     }
 
-    private fun readColumnConfiguration(entityConfig: EntityConfig, property: Property, context: AnnotationProcessingContext) : ColumnConfig {
+    private fun readColumnConfiguration(reader: IAnnotationReader, entityConfig: EntityConfig, property: Property) : ColumnConfig {
         val column = ColumnConfig(entityConfig, property)
-        context.registerColumn(column)
+        reader.registerColumn(column)
 
-        context.getAnnotationsForProperty(entityConfig.entityClass, property.field.name)?.let { variableElement ->
-            readColumnConfiguration(column, variableElement, context)
-        }
+        readColumnConfiguration(reader, property.field, column)
 
         property.getter?.let { getter ->
-            context.getAnnotationsForMethod(entityConfig.entityClass, getter.name)?.let { executableElement ->
-                readColumnConfiguration(column, executableElement, context)
-            }
+            readColumnConfiguration(reader, getter, column)
         }
 
         return column
     }
 
-    private fun readColumnConfiguration(column: ColumnConfig, element: Element, context: AnnotationProcessingContext) {
-        readDataType(column, element, context)
+    private fun readColumnConfiguration(reader: IAnnotationReader, element: ElementBase, column: ColumnConfig) {
+        readDataType(reader, element, column)
 
-        readIdConfiguration(column, element)
-        readVersionConfiguration(column, element)
+        readIdConfiguration(element, column)
+        readVersionConfiguration(element, column)
 
-        readBasicAnnotation(column, element)
-        readColumnAnnotation(column, element)
+        readBasicAnnotation(element, column)
+        readColumnAnnotation(element, column)
 
-        readRelationConfiguration(column, element, context)
+        readRelationConfiguration(reader, element, column)
     }
 
 
     @Throws(SQLException::class)
-    private fun readDataType(column: ColumnConfig, element: Element, context: AnnotationProcessingContext) {
+    private fun readDataType(reader: IAnnotationReader, element: ElementBase, column: ColumnConfig) {
         if(column.type == Date::class.java || column.type == Calendar::class.java) { // TODO: what about java.sql.Date (or Timestamp)?
-            readDateOrCalenderDataType(column, element, context)
+            readDateOrCalenderDataType(column, element, reader)
         }
-        else if (column.type.isEnum) {
-            readEnumDataType(column, element)
+        else if (column.isEnumType()) {
+            readEnumDataType(element, column)
         }
         else if(element.getAnnotation(Lob::class.java) != null) {
-            readLobAnnotation(column, element)
+            readLobAnnotation(element, column)
         }
         else if (isCollectionClass(column.type)) {
             // TODO
@@ -112,11 +101,11 @@ class ColumnConfigurationReader(private var relationColumnConfigurationReader: R
     }
 
     @Throws(SQLException::class)
-    private fun readDateOrCalenderDataType(column: ColumnConfig, element: Element, context: AnnotationProcessingContext) {
+    private fun readDateOrCalenderDataType(column: ColumnConfig, element: ElementBase, reader: IAnnotationReader) {
         val temporal = element.getAnnotation(Temporal::class.java)
 
         if (temporal == null) {
-            context.processingEnv.messager.printMessage(Diagnostic.Kind.WARNING, "@Temporal not set on field $column.\n"
+            reader.logWarn("@Temporal not set on field $column.\n"
                     + "According to JPA specification for data types java.util.Date and java.util.Calender @Temporal annotation " +
                     "has to be set. Ignoring this java.sql.Timestamp is assumed for " + column.columnName)
             column.dataType = DataType.DATE_TIMESTAMP
@@ -133,8 +122,7 @@ class ColumnConfigurationReader(private var relationColumnConfigurationReader: R
         }
     }
 
-    @Throws(SQLException::class)
-    private fun readEnumDataType(column: ColumnConfig, element: Element) {
+    private fun readEnumDataType(element: ElementBase, column: ColumnConfig) {
         element.getAnnotation(Enumerated::class.java)?.let { enumerated ->
             if (enumerated.value == EnumType.STRING) {
                 column.dataType = DataType.ENUM_STRING
@@ -142,10 +130,10 @@ class ColumnConfigurationReader(private var relationColumnConfigurationReader: R
             }
         }
 
-        column.dataType = DataType.ENUM_INTEGER
+        column.dataType = DataType.ENUM_INTEGER // default data type for enums (also if Enumerated annotation is not set)
     }
 
-    private fun readLobAnnotation(column: ColumnConfig, element: Element) {
+    private fun readLobAnnotation(element: ElementBase, column: ColumnConfig) {
         // TODO: configure Lob field; set settings according to p. 39/40
         element.getAnnotation(Lob::class.java)?.let {
             column.isLob = true
@@ -153,8 +141,10 @@ class ColumnConfigurationReader(private var relationColumnConfigurationReader: R
             // A Lob may be either a binary or character type.
             // The Lob type is inferred from the type of the persistent field or property, and except for string and character-based types defaults to Blob.
 
-            if (CharSequence::class.java.isAssignableFrom(column.type) || CharArray::class.java.isAssignableFrom(column.type) ||
-                    Array<Char>::class.java.isAssignableFrom(column.type)) {
+            val type = column.type
+
+            if (type.canBeAssignedTo(CharSequence::class.java) || type.canBeAssignedTo(CharArray::class.java) ||
+                    type.canBeAssignedTo(Array<Char>::class.java)) {
                 column.dataType = DataType.STRING
                 column.columnDefinition = "longvarchar"
             }
@@ -165,31 +155,31 @@ class ColumnConfigurationReader(private var relationColumnConfigurationReader: R
         }
     }
 
-    private fun isCollectionClass(clazz: Class<*>): Boolean {
-        return Collection::class.java.isAssignableFrom(clazz)
+    private fun isCollectionClass(type: Type): Boolean {
+        return type.canBeAssignedTo(Collection::class.java)
     }
 
 
-    private fun readIdConfiguration(column: ColumnConfig, element: Element) {
+    private fun readIdConfiguration(element: ElementBase, column: ColumnConfig) {
         element.getAnnotation(Id::class.java)?.let {
             val entityConfig = column.entityConfig
 
             column.isId = true
             entityConfig.setIdColumnAndSetItOnChildEntities(column)
 
-            setAccess(entityConfig, element)
+            setAccess(element, entityConfig)
 
-            readGeneratedValueConfiguration(column, element)
+            readGeneratedValueConfiguration(element, column)
 
-            readSequenceGeneratorConfiguration(column, element)
-            readTableGeneratorConfiguration(column, element)
+            readSequenceGeneratorConfiguration(element, column)
+            readTableGeneratorConfiguration(element, column)
         }
     }
 
-    private fun setAccess(entityConfig: EntityConfig, element: Element) {
+    private fun setAccess(element: ElementBase, entityConfig: EntityConfig) {
         if (entityConfig.access == null) { // if access != null than it has been set by @AccessAnnotation
             // otherwise access is determined where @Id Annotation is placed, on field or get method
-            if (element.kind == ElementKind.METHOD) {
+            if (element is Method) {
                 entityConfig.access = AccessType.PROPERTY
             } else {
                 entityConfig.access = AccessType.FIELD
@@ -197,7 +187,7 @@ class ColumnConfigurationReader(private var relationColumnConfigurationReader: R
         }
     }
 
-    private fun readGeneratedValueConfiguration(column: ColumnConfig, element: Element) {
+    private fun readGeneratedValueConfiguration(element: ElementBase, column: ColumnConfig) {
         element.getAnnotation(GeneratedValue::class.java)?.let { generatedValue ->
             column.isGeneratedId = true
             column.generatedIdType = generatedValue.strategy
@@ -205,19 +195,19 @@ class ColumnConfigurationReader(private var relationColumnConfigurationReader: R
         }
     }
 
-    private fun readSequenceGeneratorConfiguration(column: ColumnConfig, element: Element) {
+    private fun readSequenceGeneratorConfiguration(element: ElementBase, column: ColumnConfig) {
         element.getAnnotation(SequenceGenerator::class.java)?.let { sequenceGenerator ->
             // TODO
         }
     }
 
-    private fun  readTableGeneratorConfiguration(column: ColumnConfig, element: Element) {
+    private fun  readTableGeneratorConfiguration(element: ElementBase, column: ColumnConfig) {
         element.getAnnotation(TableGenerator::class.java)?.let { tableGenerator ->
             // TODO
         }
     }
 
-    private fun readVersionConfiguration(column: ColumnConfig, element: Element) {
+    private fun readVersionConfiguration(element: ElementBase, column: ColumnConfig) {
         element.getAnnotation(Version::class.java)?.let {
             if(isValidDataTypeForVersion(column.type) == false) {
                 throw SQLException("Data Type for @Version property $column is ${column.type} but must be one of these types: " +
@@ -229,13 +219,14 @@ class ColumnConfigurationReader(private var relationColumnConfigurationReader: R
         }
     }
 
-    private fun isValidDataTypeForVersion(type: Class<*>): Boolean { // according to http://www.objectdb.com/api/java/jpa/Version
-        return Long::class.javaPrimitiveType == type || Long::class.java == type || Long::class.javaObjectType == type
-                || Int::class.javaPrimitiveType == type || Int::class.java == type || Int::class.javaObjectType == type
-                || Short::class.javaPrimitiveType == type || Short::class.java == type || Short::class.javaObjectType == type || java.sql.Timestamp::class.java == type
+    private fun isValidDataTypeForVersion(type: Type): Boolean { // according to http://www.objectdb.com/api/java/jpa/Version
+        return type.isOfType(Long::class.javaPrimitiveType) || type.isOfType(Long::class.java) || type.isOfType(Long::class.javaObjectType)
+                || type.isOfType(Int::class.javaPrimitiveType)|| type.isOfType(Int::class.java) || type.isOfType(Int::class.javaObjectType)
+                || type.isOfType(Short::class.javaPrimitiveType) || type.isOfType(Short::class.java) || type.isOfType(Short::class.javaObjectType)
+                || type.isOfType(java.sql.Timestamp::class.java)
     }
 
-    private fun readBasicAnnotation(column: ColumnConfig, element: Element) {
+    private fun readBasicAnnotation(element: ElementBase, column: ColumnConfig) {
         val basicAnnotation = element.getAnnotation(Basic::class.java)
 
         if(basicAnnotation != null) {
@@ -245,7 +236,7 @@ class ColumnConfigurationReader(private var relationColumnConfigurationReader: R
         else {
             val getter = column.property.getter
             if(column.property.field.annotations.size == 0 &&
-               (getter == null || getter.annotations.size == 0)) {
+                    (getter == null || getter.annotations.size == 0)) {
                 // no Annotations neither on Field nor on Get-Method - then per default property gets treated as if
                 // @Basic(fetch = FetchType.EAGER, optional = true) would be set
                 column.fetch = FetchType.EAGER
@@ -254,7 +245,7 @@ class ColumnConfigurationReader(private var relationColumnConfigurationReader: R
         }
     }
 
-    private fun readColumnAnnotation(column: ColumnConfig, element: Element) {
+    private fun readColumnAnnotation(element: ElementBase, column: ColumnConfig) {
         element.getAnnotation(Column::class.java)?.let { columnAnnotation ->
             val annotationColumnNameValue = columnAnnotation.name
             if(annotationColumnNameValue.isNotEmpty()) { // when name is not set on Annotation
@@ -273,8 +264,89 @@ class ColumnConfigurationReader(private var relationColumnConfigurationReader: R
         }
     }
 
-    private fun readRelationConfiguration(column: ColumnConfig, element: Element, context: AnnotationProcessingContext) {
-        relationColumnConfigurationReader.readRelationConfiguration(column, element, context)
+    protected open fun readRelationConfiguration(reader: IAnnotationReader, element: ElementBase, column: ColumnConfig) {
+        relationColumnConfigurationReader.readRelationConfiguration(reader, element, column)
     }
+
+
+    protected open fun findProperties(fields: List<Field>, methodsMap: MutableMap<String, Method>) : List<Property> {
+        val properties = ArrayList<Property>()
+
+        for (field in fields) {
+            val getter = findGetMethod(field, methodsMap)
+            val setter = findSetMethod(field, methodsMap)
+
+            val property = Property(field, getter, setter)
+            properties.add(property)
+        }
+
+        return properties
+    }
+
+    private fun findGetMethod(field: Field, methodsMap: MutableMap<String, Method>): Method? {
+        val fieldName = getFieldNameWithFirstLetterUpperCase(field)
+
+        methodsMap["get" + fieldName]?.let { getMethod ->
+            if (isGetMethodForField(getMethod, field)) {
+                methodsMap.remove(getMethod.name)
+
+                return getMethod
+            }
+        }
+
+        if (field.type.isBooleanType) {
+            methodsMap["is" + fieldName]?.let { getMethod ->
+                if (isGetMethodForField(getMethod, field)) {
+                    methodsMap.remove(getMethod.name)
+
+                    return getMethod
+                }
+            }
+
+            methodsMap["has" + fieldName]?.let { getMethod ->
+                if (isGetMethodForField(getMethod, field)) {
+                    methodsMap.remove(getMethod.name)
+
+                    return getMethod
+                }
+            }
+        }
+
+        return null
+    }
+
+    private fun isGetMethodForField(getMethod: Method?, field: Field): Boolean {
+        return getMethod != null && isGetMethod(getMethod) && getMethod.returnType == field.type
+    }
+
+    private fun isGetMethod(method: Method): Boolean {
+        val methodName = method.name
+        return method.hasNoParameters() &&
+                ( methodName.startsWith("get") || isBooleanGetMethod(method, methodName) )
+    }
+
+    private fun isBooleanGetMethod(method: Method, methodName: String): Boolean {
+        return (method.returnType.isBooleanType)
+                && (methodName.startsWith("is") || methodName.startsWith("has"))
+    }
+
+    private fun findSetMethod(field: Field, methodsMap: MutableMap<String, Method>): Method? {
+        val fieldName = getFieldNameWithFirstLetterUpperCase(field)
+
+        methodsMap["set" + fieldName]?.let { setMethod ->
+
+            if(setMethod.returnType.isVoidType && setMethod.hasCountParameters(1)
+                    && setMethod.parameters[0] == field.type) {
+
+                methodsMap.remove(setMethod.name)
+
+                return setMethod
+            }
+        }
+
+        return null
+    }
+
+    private fun getFieldNameWithFirstLetterUpperCase(field: Field) = field.name.substring(0, 1).toUpperCase(Locale.ENGLISH) + field.name.substring(1)
 
 }

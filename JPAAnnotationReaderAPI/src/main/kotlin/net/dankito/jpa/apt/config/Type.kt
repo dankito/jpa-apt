@@ -1,14 +1,15 @@
-package net.dankito.jpa.apt.reflectionfree
+package net.dankito.jpa.apt.config
 
 
-open class Type(val className: String,
-                val packageName: String,
-                /**
-                 * The package name and class name combined
-                 */
-                val qualifiedName: String,
-                val genericArguments: List<Type> = listOf(),
-                val isEnum: Boolean = false
+open class Type @JvmOverloads constructor(
+        val className: String,
+        val packageName: String,
+        /**
+         * The package name and class name combined
+         */
+        val qualifiedName: String,
+        val genericArguments: List<Type> = listOf(),
+        val isEnum: Boolean = false
 ) {
 
     companion object {
@@ -59,7 +60,7 @@ open class Type(val className: String,
 
     // TODO: this works only for already compiled classes, that is for classes that are not defined in the
     //  same library / project that calls (k)apt!
-    protected open fun getClassType(): Class<*> {
+    internal open fun getClassType(): Class<*> {
         classTypeProperty?.let {
             return it
         }

@@ -11,10 +11,11 @@ import javax.persistence.GenerationType
         generator = ObjectIdGenerators.UUIDGenerator::class)
 open class ColumnConfig(val entityConfig: EntityConfig, val property: Property) {
 
-    private constructor() : this(EntityConfig(), Property()) // for Jackson
+    private constructor() : this(EntityConfig(), Property()) // for object deserializers
 
 
-    var type: Class<*> = property.getType()
+    var type: Type = property.field.type
+    var classType: Class<*> = property.field.type.getClassType()
     var dataType: DataType? = null
 
     var columnName = property.field.name // default value, may be overwritten by @Column (or other) annotation

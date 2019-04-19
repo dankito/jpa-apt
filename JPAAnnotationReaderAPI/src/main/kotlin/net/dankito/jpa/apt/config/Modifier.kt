@@ -1,4 +1,4 @@
-package net.dankito.jpa.apt.reflectionfree
+package net.dankito.jpa.apt.config
 
 
 enum class Modifier {
