@@ -73,6 +73,9 @@ open class EntityConfig(val type: Type) {
     private var areInheritedColumnsWithCascadePersistLoaded = false
     private var columnsWithCascadePersistIncludingInheritedOnes = LinkedHashSet<ColumnConfig>()
 
+    private var areInheritedColumnsWithCascadeMergeLoaded = false
+    private var columnsWithCascadeMergeIncludingInheritedOnes = LinkedHashSet<ColumnConfig>()
+
     private var areInheritedColumnsWithCascadeRemoveLoaded = false
     private var columnsWithCascadeRemoveIncludingInheritedOnes = LinkedHashSet<ColumnConfig>()
 
@@ -324,6 +327,14 @@ open class EntityConfig(val type: Type) {
         }
 
         return columnsWithCascadePersistIncludingInheritedOnes
+    }
+
+    fun getColumnsWithCascadeMergeIncludingInheritedOnes(): Collection<ColumnConfig> {
+        if(areInheritedColumnsWithCascadeMergeLoaded == false) {
+            loadColumnsWithCascadeIncludingInheritedOnes(this, columnsWithCascadeMergeIncludingInheritedOnes, CascadeType.MERGE)
+        }
+
+        return columnsWithCascadeMergeIncludingInheritedOnes
     }
 
     fun getColumnsWithCascadeRemoveIncludingInheritedOnes(): Collection<ColumnConfig> {
