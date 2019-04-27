@@ -184,20 +184,22 @@ open class AptAnnotationReader(protected val processingEnv: ProcessingEnvironmen
     }
 
     fun typeFromQualifiedName(qualifiedName: String, genericArguments: List<Type>): Type {
-        var className = qualifiedName
+        val adjustedQualifiedName = qualifiedName.replace("? extends ", "") // generic arguments are prepended with '? extends '
+
+        var className = adjustedQualifiedName
         var packageName = ""
 
         try { // for method parameters class name and package name really aren't that important
-            val dollarIndex = qualifiedName.lastIndexOf('$')
+            val dollarIndex = adjustedQualifiedName.lastIndexOf('$')
             if (dollarIndex > 0) {
-                packageName = qualifiedName.substring(0, dollarIndex)
-                className = qualifiedName.substring(dollarIndex + 1)
+                packageName = adjustedQualifiedName.substring(0, dollarIndex)
+                className = adjustedQualifiedName.substring(dollarIndex + 1)
             }
             else {
-                val lastDotIndex = qualifiedName.lastIndexOf('.')
+                val lastDotIndex = adjustedQualifiedName.lastIndexOf('.')
                 if (lastDotIndex > 0) {
-                    packageName = qualifiedName.substring(0, lastDotIndex)
-                    className = qualifiedName.substring(lastDotIndex + 1)
+                    packageName = adjustedQualifiedName.substring(0, lastDotIndex)
+                    className = adjustedQualifiedName.substring(lastDotIndex + 1)
                 }
             }
         } catch (e: Exception) {
@@ -206,7 +208,7 @@ open class AptAnnotationReader(protected val processingEnv: ProcessingEnvironmen
                     "exception and continuing without ...", e)
         }
 
-        return Type(className, packageName, qualifiedName, genericArguments)
+        return Type(className, packageName, adjustedQualifiedName, genericArguments)
     }
 
     protected open fun getPackageElement(element: QualifiedNameable): PackageElement? {
