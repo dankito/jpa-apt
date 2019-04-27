@@ -6,6 +6,7 @@ import javax.annotation.processing.ProcessingEnvironment
 import javax.annotation.processing.RoundEnvironment
 import javax.lang.model.element.*
 import javax.lang.model.type.DeclaredType
+import javax.lang.model.type.NoType
 import javax.lang.model.type.TypeMirror
 import javax.persistence.Entity
 import javax.persistence.MappedSuperclass
@@ -133,9 +134,21 @@ open class AptAnnotationReader(protected val processingEnv: ProcessingEnvironmen
     }
 
     protected open fun mapEntitiesHierarchy(mappedSuperclasses: MutableSet<out Element>, entityClasses: MutableSet<out Element>) {
+        mappedSuperclasses.mapNotNull { it as? TypeElement }.forEach { entity ->
+            findAndSetSuperclass(entity)
+        }
+
         entityClasses.mapNotNull { it as? TypeElement }.forEach { entity ->
-            entity.superclass?.let { superclass ->
-                ((superclass as? DeclaredType)?.asElement() as? TypeElement)?.let { superclassElement ->
+            findAndSetSuperclass(entity)
+        }
+    }
+
+    protected open fun findAndSetSuperclass(entity: TypeElement) {
+        entity.superclass?.let { superclass ->
+            ((superclass as? DeclaredType)?.asElement() as? TypeElement)?.let { superclassElement ->
+
+                if (superclassElement.superclass is NoType == false &&
+                        superclassElement.qualifiedName.toString() != "java.lang.Object") {
                     setSuperclass(superclassElement, entity)
                 }
             }
