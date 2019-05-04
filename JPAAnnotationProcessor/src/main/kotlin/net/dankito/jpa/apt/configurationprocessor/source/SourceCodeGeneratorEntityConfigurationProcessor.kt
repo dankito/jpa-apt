@@ -197,7 +197,8 @@ class SourceCodeGeneratorEntityConfigurationProcessor : IEntityConfigurationProc
                 .addStatement("column.setFetch(\$T.\$L)", ClassName.get(FetchType::class.java), columnConfig.fetch)
                 .addCode(System.lineSeparator())
 
-                .addStatement("column.setRelationType(\$T.\$L)", ClassName.get(RelationType::class.java), columnConfig.relationType)
+                .addStatement("column.setRelationType(\$T.\$L)",
+                        ClassName.get(net.dankito.jpa.apt.config.RelationType::class.java), columnConfig.relationType)
                 .addCode(System.lineSeparator())
 
                 .addStatement("column.setTargetEntity(targetEntity)")
