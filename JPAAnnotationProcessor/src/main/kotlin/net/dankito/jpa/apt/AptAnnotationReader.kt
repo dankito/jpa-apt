@@ -264,9 +264,11 @@ open class AptAnnotationReader(protected val processingEnv: ProcessingEnvironmen
     }
 
     protected open fun findNoArgConstructor(entity: EntityTypeInfo): Element? {
+
         return entity.entityElement?.enclosedElements
                 ?.filter { it.kind == ElementKind.CONSTRUCTOR }
-                ?.firstOrNull { it.enclosedElements.isEmpty() }
+                ?.mapNotNull { it as? ExecutableElement }
+                ?.firstOrNull { it.parameters.isEmpty() }
     }
 
 
