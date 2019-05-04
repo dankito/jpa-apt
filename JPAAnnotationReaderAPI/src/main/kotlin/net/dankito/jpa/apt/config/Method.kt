@@ -17,6 +17,9 @@ open class Method @JvmOverloads constructor(val name: String,
     }
 
 
+    internal constructor() : this("", Type(), listOf()) // for object deserializers
+
+
     protected var javaMethodProperty: Method? = null
 
 
