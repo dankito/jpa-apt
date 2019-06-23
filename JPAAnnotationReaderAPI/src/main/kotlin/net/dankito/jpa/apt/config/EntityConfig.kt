@@ -196,7 +196,13 @@ open class EntityConfig(val type: Type) {
 
     fun getNoArgConstructor(): Constructor<*> {
         try {
-            return getEntityClass().getDeclaredConstructor()
+            val noArgConstructor = getEntityClass().getDeclaredConstructor()
+
+            if (noArgConstructor.isAccessible == false) {
+                noArgConstructor.isAccessible = true
+            }
+
+            return noArgConstructor
         } catch (e: Exception) {
             println("Could not get no-arg constructor for class ${type.qualifiedName}: " + e)
         }
