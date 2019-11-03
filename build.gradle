@@ -38,7 +38,7 @@ allprojects {
 
 subprojects {
     group 'net.dankito.jpa.annotationreader'
-    version '1.0.0-alpha4'
+    version versionName
 
     task allDeps(type: DependencyReportTask) {} // to have a simple way to print all dependencies to console
 
