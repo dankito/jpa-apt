@@ -397,7 +397,7 @@ open class AptAnnotationReader(protected val processingEnv: ProcessingEnvironmen
         logMessage(Diagnostic.Kind.WARNING, message)
     }
 
-    override fun logWarn(message: String, exception: Exception) {
+    override fun logWarn(message: String, exception: Throwable) {
         logWarn("$message: $exception") // TODO: also log stack trace?
     }
 
@@ -405,7 +405,7 @@ open class AptAnnotationReader(protected val processingEnv: ProcessingEnvironmen
         logMessage(Diagnostic.Kind.ERROR, message)
     }
 
-    override fun logError(message: String, exception: Exception) {
+    override fun logError(message: String, exception: Throwable) {
         logError("$message: $exception") // TODO: also log stack trace?
     }
 

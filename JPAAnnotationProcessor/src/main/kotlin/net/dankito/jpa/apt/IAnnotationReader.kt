@@ -54,9 +54,9 @@ interface IAnnotationReader {
     fun logInfo(message: String)
 
     fun logWarn(message: String)
-    fun logWarn(message: String, exception: Exception)
+    fun logWarn(message: String, exception: Throwable)
 
     fun logError(message: String)
-    fun logError(message: String, exception: Exception)
+    fun logError(message: String, exception: Throwable)
 
 }
