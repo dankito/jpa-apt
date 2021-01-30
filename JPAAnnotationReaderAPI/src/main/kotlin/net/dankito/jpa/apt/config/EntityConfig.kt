@@ -9,6 +9,7 @@ import javax.persistence.CascadeType
 import javax.persistence.InheritanceType
 import kotlin.collections.ArrayList
 import kotlin.collections.LinkedHashSet
+import java.lang.Thread.currentThread
 
 @JsonIdentityInfo(
         generator = ObjectIdGenerators.PropertyGenerator::class,
@@ -187,7 +188,11 @@ open class EntityConfig(val type: Type) {
             return it
         }
 
-        val retrievedClass = Class.forName(type.qualifiedName)
+        val retrievedClass = try {
+            Class.forName(type.qualifiedName)
+        } catch (e: ClassNotFoundException) {
+            currentThread().contextClassLoader.loadClass(type.qualifiedName)
+        }
 
         this.entityClass = retrievedClass
 
