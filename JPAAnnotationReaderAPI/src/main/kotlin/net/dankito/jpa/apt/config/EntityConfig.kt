@@ -19,63 +19,63 @@ open class EntityConfig(val type: Type) {
     internal constructor() : this(Type()) // for object deserializers
 
 
-    lateinit var tableName: String
+    open lateinit var tableName: String
 
     // TODO: call that one from parent? (or set value when parent's value is set?)
-    var access: AccessType? = null // TODO: may not be null
+    open var access: AccessType? = null // TODO: may not be null
 
-    lateinit var idColumn: ColumnConfig
-    var versionColumn: ColumnConfig? = null
+    open lateinit var idColumn: ColumnConfig
+    open var versionColumn: ColumnConfig? = null
 
-    var columns = ArrayList<ColumnConfig>()
-        private set
+    open var columns = ArrayList<ColumnConfig>()
+        protected set
 
-    var parentEntity: EntityConfig? = null
-        private set
+    open var parentEntity: EntityConfig? = null
+        protected set
 
-    val childEntities = ArrayList<EntityConfig>()
+    open val childEntities = ArrayList<EntityConfig>()
 
 
     // @Table Annotation settings
-    var catalogName: String? = null
-    var schemaName: String? = null
+    open var catalogName: String? = null
+    open var schemaName: String? = null
 //    var uniqueConstraints: Array<UniqueConstraint> = arrayOf() // TODO: make serializable
 //    var indexes: Array<Index> = arrayOf() // TODO: JPA 2.1
 
     // inheritance
-    var classHierarchy: List<Class<*>> = mutableListOf()
-    protected var inheritanceTopLevelEntityConfig: EntityConfig? = null
-    protected var topDownInheritanceHierarchy: MutableList<EntityConfig>? = null
-    protected var subClassEntityConfigs: MutableSet<EntityConfig> = HashSet()
-    var inheritance: InheritanceType? = null
+    open var classHierarchy: List<Class<*>> = mutableListOf()
+    protected open var inheritanceTopLevelEntityConfig: EntityConfig? = null
+    protected open var topDownInheritanceHierarchy: MutableList<EntityConfig>? = null
+    protected open var subClassEntityConfigs: MutableSet<EntityConfig> = HashSet()
+    open var inheritance: InheritanceType? = null
 
     // Life Cycle Events
-    var prePersistLifeCycleMethods = ArrayList<Method>()
-        private set
-    var postPersistLifeCycleMethods = ArrayList<Method>()
-        private set
-    var postLoadLifeCycleMethods = ArrayList<Method>()
-        private set
-    var preUpdateLifeCycleMethods = ArrayList<Method>()
-        private set
-    var postUpdateLifeCycleMethods = ArrayList<Method>()
-        private set
-    var preRemoveLifeCycleMethods = ArrayList<Method>()
-        private set
-    var postRemoveLifeCycleMethods = ArrayList<Method>()
-        private set
+    open var prePersistLifeCycleMethods = ArrayList<Method>()
+        protected set
+    open var postPersistLifeCycleMethods = ArrayList<Method>()
+        protected set
+    open var postLoadLifeCycleMethods = ArrayList<Method>()
+        protected set
+    open var preUpdateLifeCycleMethods = ArrayList<Method>()
+        protected set
+    open var postUpdateLifeCycleMethods = ArrayList<Method>()
+        protected set
+    open var preRemoveLifeCycleMethods = ArrayList<Method>()
+        protected set
+    open var postRemoveLifeCycleMethods = ArrayList<Method>()
+        protected set
 
 
-    private var isIdColumnSet = false
+    protected open var isIdColumnSet = false
 
-    private var areInheritedColumnsLoaded = false
-    private var columnsIncludingInheritedOnes = LinkedHashSet<ColumnConfig>()
+    protected open var areInheritedColumnsLoaded = false
+    protected open var columnsIncludingInheritedOnes = LinkedHashSet<ColumnConfig>()
 
-    private var areInheritedColumnsWithCascadePersistLoaded = false
-    private var columnsWithCascadePersistIncludingInheritedOnes = LinkedHashSet<ColumnConfig>()
+    protected open var areInheritedColumnsWithCascadePersistLoaded = false
+    protected open var columnsWithCascadePersistIncludingInheritedOnes = LinkedHashSet<ColumnConfig>()
 
-    private var areInheritedColumnsWithCascadeMergeLoaded = false
-    private var columnsWithCascadeMergeIncludingInheritedOnes = LinkedHashSet<ColumnConfig>()
+    protected open var areInheritedColumnsWithCascadeMergeLoaded = false
+    protected open var columnsWithCascadeMergeIncludingInheritedOnes = LinkedHashSet<ColumnConfig>()
 
     private var areInheritedColumnsWithCascadeRemoveLoaded = false
     private var columnsWithCascadeRemoveIncludingInheritedOnes = LinkedHashSet<ColumnConfig>()
@@ -86,86 +86,86 @@ open class EntityConfig(val type: Type) {
      */
     private var entityClass: Class<*>? = null
 
-    private val methods = mutableMapOf<Method, java.lang.reflect.Method>()
+    protected open val methods = mutableMapOf<Method, java.lang.reflect.Method>()
 
 
-    fun addPrePersistLifeCycleMethod(method: Method) {
+    open fun addPrePersistLifeCycleMethod(method: Method) {
         prePersistLifeCycleMethods.add(method)
     }
 
-    fun addPostPersistLifeCycleMethod(method: Method) {
+    open fun addPostPersistLifeCycleMethod(method: Method) {
         postPersistLifeCycleMethods.add(method)
     }
 
-    fun addPostLoadLifeCycleMethod(method: Method) {
+    open fun addPostLoadLifeCycleMethod(method: Method) {
         postLoadLifeCycleMethods.add(method)
     }
 
-    fun addPreUpdateLifeCycleMethod(method: Method) {
+    open fun addPreUpdateLifeCycleMethod(method: Method) {
         preUpdateLifeCycleMethods.add(method)
     }
 
-    fun addPostUpdateLifeCycleMethod(method: Method) {
+    open fun addPostUpdateLifeCycleMethod(method: Method) {
         postUpdateLifeCycleMethods.add(method)
     }
 
-    fun addPreRemoveLifeCycleMethod(method: Method) {
+    open fun addPreRemoveLifeCycleMethod(method: Method) {
         preRemoveLifeCycleMethods.add(method)
     }
 
-    fun addPostRemoveLifeCycleMethod(method: Method) {
+    open fun addPostRemoveLifeCycleMethod(method: Method) {
         postRemoveLifeCycleMethods.add(method)
     }
 
-    fun invokePrePersistLifeCycleMethod(data: Any) {
+    open fun invokePrePersistLifeCycleMethod(data: Any) {
         invokeMethods(prePersistLifeCycleMethods, data)
 
         parentEntity?.invokePrePersistLifeCycleMethod(data)
     }
 
-    fun invokePostPersistLifeCycleMethod(data: Any) {
+    open fun invokePostPersistLifeCycleMethod(data: Any) {
         invokeMethods(postPersistLifeCycleMethods, data)
 
         parentEntity?.invokePostPersistLifeCycleMethod(data)
     }
 
-    fun invokePostLoadLifeCycleMethod(data: Any) {
+    open fun invokePostLoadLifeCycleMethod(data: Any) {
         invokeMethods(postLoadLifeCycleMethods, data)
 
         parentEntity?.invokePostLoadLifeCycleMethod(data)
     }
 
-    fun invokePreUpdateLifeCycleMethod(data: Any) {
+    open fun invokePreUpdateLifeCycleMethod(data: Any) {
         invokeMethods(preUpdateLifeCycleMethods, data)
 
         parentEntity?.invokePreUpdateLifeCycleMethod(data)
     }
 
-    fun invokePostUpdateLifeCycleMethod(data: Any) {
+    open fun invokePostUpdateLifeCycleMethod(data: Any) {
         invokeMethods(postUpdateLifeCycleMethods, data)
 
         parentEntity?.invokePostUpdateLifeCycleMethod(data)
     }
 
-    fun invokePreRemoveLifeCycleMethod(data: Any) {
+    open fun invokePreRemoveLifeCycleMethod(data: Any) {
         invokeMethods(preRemoveLifeCycleMethods, data)
 
         parentEntity?.invokePreRemoveLifeCycleMethod(data)
     }
 
-    fun invokePostRemoveLifeCycleMethod(data: Any) {
+    open fun invokePostRemoveLifeCycleMethod(data: Any) {
         invokeMethods(postRemoveLifeCycleMethods, data)
 
         parentEntity?.invokePostRemoveLifeCycleMethod(data)
     }
 
-    private fun invokeMethods(methods: List<Method>, data: Any) {
+    protected open fun invokeMethods(methods: List<Method>, data: Any) {
         for(method in methods) {
             invokeMethod(method, data)
         }
     }
 
-    private fun invokeMethod(method: Method, data: Any) {
+    protected open fun invokeMethod(method: Method, data: Any) {
         try {
             val javaLangMethod = getJavaLangMethod(method)
 
@@ -183,7 +183,7 @@ open class EntityConfig(val type: Type) {
     /**
      * Call this method only at runtime, not at build time, as at build time class may is not already compiled!
      */
-    fun getEntityClass(): Class<*> {
+    open fun getEntityClass(): Class<*> {
         entityClass?.let {
             return it
         }
@@ -199,7 +199,7 @@ open class EntityConfig(val type: Type) {
         return retrievedClass
     }
 
-    fun getNoArgConstructor(): Constructor<*> {
+    open fun getNoArgConstructor(): Constructor<*> {
         try {
             val noArgConstructor = getEntityClass().getDeclaredConstructor()
 
@@ -222,7 +222,7 @@ open class EntityConfig(val type: Type) {
      * Call this method only at runtime, not at build time, as at build time class and therefore method may is not
      * already compiled!
      */
-    private fun getJavaLangMethod(method: Method): java.lang.reflect.Method {
+    protected open fun getJavaLangMethod(method: Method): java.lang.reflect.Method {
         methods[method]?.let {
             return it
         }
@@ -236,11 +236,11 @@ open class EntityConfig(val type: Type) {
     }
 
 
-    fun addColumn(column: ColumnConfig) {
+    open fun addColumn(column: ColumnConfig) {
         columns.add(column)
     }
 
-    fun addChildEntityConfig(entityConfig: EntityConfig) {
+    open fun addChildEntityConfig(entityConfig: EntityConfig) {
         childEntities.add(entityConfig)
 
         entityConfig.parentEntity = this
@@ -255,7 +255,7 @@ open class EntityConfig(val type: Type) {
     }
 
 
-    fun setIdColumnAndSetItOnChildEntities(idColumn: ColumnConfig) {
+    open fun setIdColumnAndSetItOnChildEntities(idColumn: ColumnConfig) {
         this.idColumn = idColumn
 
         this.isIdColumnSet = true
@@ -263,13 +263,13 @@ open class EntityConfig(val type: Type) {
         setIdColumnOnChildEntitiesRecursively(idColumn)
     }
 
-    private fun setIdColumnOnChildEntitiesRecursively(idColumn: ColumnConfig) {
+    protected open fun setIdColumnOnChildEntitiesRecursively(idColumn: ColumnConfig) {
         for(childEntity in childEntities) {
             setIdColumnOnChildEntitiesRecursively(childEntity, idColumn)
         }
     }
 
-    private fun setIdColumnOnChildEntitiesRecursively(childEntity: EntityConfig, idColumn: ColumnConfig) {
+    protected open fun setIdColumnOnChildEntitiesRecursively(childEntity: EntityConfig, idColumn: ColumnConfig) {
         childEntity.idColumn = idColumn
 
         for(subChild in childEntity.childEntities) {
@@ -277,19 +277,19 @@ open class EntityConfig(val type: Type) {
         }
     }
 
-    fun setVersionColumnAndSetItOnChildEntities(versionColumn: ColumnConfig?) {
+    open fun setVersionColumnAndSetItOnChildEntities(versionColumn: ColumnConfig?) {
         this.versionColumn = versionColumn
 
         setVersionColumnOnChildEntitiesRecursively(versionColumn)
     }
 
-    private fun setVersionColumnOnChildEntitiesRecursively(versionColumn: ColumnConfig?) {
+    protected open fun setVersionColumnOnChildEntitiesRecursively(versionColumn: ColumnConfig?) {
         for(childEntity in childEntities) {
             setVersionColumnOnChildEntitiesRecursively(childEntity, versionColumn)
         }
     }
 
-    private fun setVersionColumnOnChildEntitiesRecursively(childEntity: EntityConfig, versionColumn: ColumnConfig?) {
+    protected open fun setVersionColumnOnChildEntitiesRecursively(childEntity: EntityConfig, versionColumn: ColumnConfig?) {
         childEntity.versionColumn = versionColumn
 
         for(subChild in childEntity.childEntities) {
@@ -298,16 +298,16 @@ open class EntityConfig(val type: Type) {
     }
 
 
-    fun isVersionColumnSet(): Boolean {
+    open fun isVersionColumnSet(): Boolean {
         return versionColumn != null
     }
 
-    fun hasParentEntity(): Boolean {
+    open fun hasParentEntity(): Boolean {
         return parentEntity != null
     }
 
 
-    fun getColumnsIncludingInheritedOnes(): Collection<ColumnConfig> {
+    open fun getColumnsIncludingInheritedOnes(): Collection<ColumnConfig> {
         if(areInheritedColumnsLoaded == false) {
             loadColumnsIncludingInheritedOnes(this)
         }
@@ -315,7 +315,7 @@ open class EntityConfig(val type: Type) {
         return columnsIncludingInheritedOnes
     }
 
-    private fun loadColumnsIncludingInheritedOnes(entityConfig: EntityConfig) {
+    protected open fun loadColumnsIncludingInheritedOnes(entityConfig: EntityConfig) {
         entityConfig.parentEntity?.let { parentEntity ->
             loadColumnsIncludingInheritedOnes(parentEntity)
         }
@@ -324,7 +324,7 @@ open class EntityConfig(val type: Type) {
     }
 
 
-    fun getColumnsWithCascadePersistIncludingInheritedOnes(): Collection<ColumnConfig> {
+    open fun getColumnsWithCascadePersistIncludingInheritedOnes(): Collection<ColumnConfig> {
         if(areInheritedColumnsWithCascadePersistLoaded == false) {
             loadColumnsWithCascadeIncludingInheritedOnes(this, columnsWithCascadePersistIncludingInheritedOnes, CascadeType.PERSIST)
         }
@@ -332,7 +332,7 @@ open class EntityConfig(val type: Type) {
         return columnsWithCascadePersistIncludingInheritedOnes
     }
 
-    fun getColumnsWithCascadeMergeIncludingInheritedOnes(): Collection<ColumnConfig> {
+    open fun getColumnsWithCascadeMergeIncludingInheritedOnes(): Collection<ColumnConfig> {
         if(areInheritedColumnsWithCascadeMergeLoaded == false) {
             loadColumnsWithCascadeIncludingInheritedOnes(this, columnsWithCascadeMergeIncludingInheritedOnes, CascadeType.MERGE)
         }
@@ -340,7 +340,7 @@ open class EntityConfig(val type: Type) {
         return columnsWithCascadeMergeIncludingInheritedOnes
     }
 
-    fun getColumnsWithCascadeRemoveIncludingInheritedOnes(): Collection<ColumnConfig> {
+    open fun getColumnsWithCascadeRemoveIncludingInheritedOnes(): Collection<ColumnConfig> {
         if(areInheritedColumnsWithCascadeRemoveLoaded == false) {
             loadColumnsWithCascadeIncludingInheritedOnes(this, columnsWithCascadeRemoveIncludingInheritedOnes, CascadeType.REMOVE)
         }
@@ -348,7 +348,7 @@ open class EntityConfig(val type: Type) {
         return columnsWithCascadeRemoveIncludingInheritedOnes
     }
 
-    private fun loadColumnsWithCascadeIncludingInheritedOnes(entityConfig: EntityConfig, collectionToAddTo: MutableCollection<ColumnConfig>, cascadeType: CascadeType) {
+    protected open fun loadColumnsWithCascadeIncludingInheritedOnes(entityConfig: EntityConfig, collectionToAddTo: MutableCollection<ColumnConfig>, cascadeType: CascadeType) {
         entityConfig.parentEntity?.let { parentEntity ->
             loadColumnsIncludingInheritedOnes(parentEntity)
         }
